@@ -63,7 +63,13 @@ def make_handler(store, tokens=None):
                 if not self.server.buckets.take(tenant):
                     return self._send(429, {"error": {"code": "RATE_LIMITED",
                                                       "retry_after": self.server.buckets.retry_after(tenant)}})
-                payload, quality = self._quality_gate(body)
+                try:
+                    payload, quality = self._quality_gate(body)
+                except QualityRefused as refusal:
+                    return self._send(422, {"error": {
+                        "code": "PLAN_UNREPAIRABLE",
+                        "message": "the plan could not be brought to an acceptable score",
+                        "details": refusal.gate}})
                 job, created = store.submit(tenant, body.get("kind", "plan"),
                                             self.headers.get("Idempotency-Key"),
                                             payload)
@@ -95,6 +101,13 @@ def make_handler(store, tokens=None):
             gate = {"before": before["verdict"], "after": after["verdict"],
                     "total": after["total"],
                     "repairs": Rp.quality_diff(plan, payload.get("request") or {})["repairs"]}
+            if after["verdict"] not in ("acceptable",):
+                # v2.14 repaired and reported, and queued the job anyway. A plan
+                # the repair cannot lift fails later in the renderer, where the
+                # error is more expensive and less legible — so it is refused
+                # here, naming the criterion that would not move.
+                gate["unrepairable"] = [r["criterion"] for r in gate["repairs"]]
+                raise QualityRefused(gate)
             return dict(payload, plan=repaired), gate
 
         def _answer(self, parts, body):
@@ -143,6 +156,14 @@ def make_handler(store, tokens=None):
             return self._send(404, {"error": "not found"})
 
     return Handler
+
+
+class QualityRefused(Exception):
+    """§7.5: a plan the repair cannot lift is refused, not queued."""
+
+    def __init__(self, gate):
+        super().__init__("PLAN_UNREPAIRABLE")
+        self.gate = gate
 
 
 class Server:

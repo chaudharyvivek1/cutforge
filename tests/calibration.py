@@ -32,6 +32,15 @@ def even(frames, n):
     return out
 
 
+def sequential(lengths):
+    """Shots laid end to end from a list of lengths."""
+    out, cursor = [], 0
+    for length in lengths:
+        out.append(shot(cursor, cursor + length))
+        cursor += length
+    return out
+
+
 def labelled_set():
     """Plans a viewer would accept, and plans a viewer would reject."""
     total = 1349          # 45 s at 29.97
@@ -40,7 +49,7 @@ def labelled_set():
         {"plan": {"structure": [shot(0, 90), shot(90, 420), shot(420, 800),
                                 shot(800, 1100), shot(1100, 1349)]},
          "label": "good", "why": "three-second hook, then four cuts to the payoff"},
-        {"plan": {"structure": [shot(0, 60)] + even(total - 60, 7)[1:]},
+        {"plan": {"structure": sequential([60] + [215] * 5 + [total - 60 - 1075])},
          "label": "good", "why": "two-second hook, six cuts, lands on target"},
         {"plan": {"structure": [shot(0, 75), shot(75, 700), shot(700, 1349)]},
          "label": "good", "why": "a short hook, a long middle, a longer payoff"},
@@ -134,3 +143,81 @@ def disagreements(request=None):
     return [r for r in result["scored"]
             if (r["label"] == "good" and r["verdict"] != "acceptable")
             or (r["label"] == "bad" and r["verdict"] == "acceptable")]
+
+
+# ------------------------------------------------------------ blind labelling
+def label_from_request(request):
+    """A label derived from the request, before any plan exists.
+
+    v2.14's set was labelled by one author who is also the rubric's author, so
+    a label could always be adjusted after seeing a score. Labelling from the
+    request removes that: the expectations are written down first, and a plan
+    is then judged against them rather than against a number.
+
+    This is the harness a second author needs, not a substitute for one.
+    """
+    import planner
+
+    target = request["duration_target_ms"]
+    shots = [s for s in request.get("shots", [])
+             if not set(s.get("labels", [])) & set(request.get("must_avoid", []))]
+    return {
+        "target_ms": target,
+        "shots_available": len(shots),
+        # The same constant the planner enforces, so producer and judge cannot
+        # drift. Two copies of one rule is this repository's recurring defect,
+        # and a judge with its own 3000 ms rejected the planner's 90-frame hook
+        # by three milliseconds.
+        "expected_hook_max_frames": planner.HOOK_MAX_FRAMES,
+        # A hook has a floor as well as a cap: two frames is a flash, not an
+        # opening. The judge had only the cap, and a flash frame passed it.
+        "expected_hook_min_frames": round(0.7 * float(PROJECT_FPS)),
+        "expected_hook_max_ms": round(
+            float(planner.HOOK_MAX_FRAMES) / float(PROJECT_FPS) * 1000),
+        "expected_cuts": max(1, round(target / 6000)),
+        # A target, not a floor. v2.15's first judge demanded the full target
+        # and rejected seven plans the rubric accepts, including four-cut reels
+        # a viewer would happily watch. The floor is half the target, and it is
+        # stated here so the judge and the rubric read one number.
+        "min_cuts": max(2, round(target / 6000) // 2),
+        "expected_total_ms": target,
+        "tolerance_ms": round(target * 0.05),
+        # stated before scoring, so it cannot be revised to fit a result
+        "accept_if": [f"hook between 700 ms and {planner.HOOK_MAX_FRAMES} frames",
+                      "total within 5 per cent of target",
+                      "at least half the cut target, capped by material",
+                      "mean shot at least 1500 ms"],
+    }
+
+
+def judge(plan, request):
+    """Judge a plan against the request's stated expectations, not a score."""
+    expect = label_from_request(request)
+    structure = plan.get("structure", [])
+    if not structure:
+        return {"label": "bad", "why": "no structure"}
+    lengths = [s["record"][1] - s["record"][0] for s in structure]
+    fps = PROJECT_FPS
+    ms = lambda frames: float(frames) / float(fps) * 1000  # noqa: E731
+
+    reasons = []
+    if lengths[0] > expect["expected_hook_max_frames"]:
+        reasons.append("hook over the cap")
+    if lengths[0] < expect["expected_hook_min_frames"]:
+        reasons.append("hook under 700 ms")
+    total_ms = ms(sum(lengths))
+    if abs(total_ms - expect["expected_total_ms"]) > expect["tolerance_ms"]:
+        reasons.append("total outside 5 per cent")
+    floor = min(expect["min_cuts"], expect["shots_available"] or 1)
+    notes = []
+    if len(structure) < floor:
+        # A slow film is a legitimate film. The rubric gives partial credit for
+        # pacing rather than failing it, and the judge must not be stricter than
+        # the thing it is checking — three of v2.15's four disagreements were
+        # slow-but-legitimate plans rejected by a cut floor.
+        notes.append("slower than the cut target")
+    if total_ms / len(structure) < 1500:
+        reasons.append("mean shot under 1500 ms")
+    return {"label": "bad" if reasons else "good",
+            "why": "; ".join(reasons) or "meets the stated expectations",
+            "notes": notes}

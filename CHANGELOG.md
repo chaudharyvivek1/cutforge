@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.5 — 22 November 2026
+
+**Basis:** fifteenth technical review.
+**Theme:** the surface is defended. The tenant comes from a token rather than a header, the signals are emitted rather than described, and a webhook cannot be replayed.
+
+| Finding | Resolved by |
+|---|---|
+| The service trusted a tenant header | `auth.resolve()` — tenant from a bearer token, a header may only narrow it, 403 on a non-admin override, 401 with no credential |
+| §17's signals were never emitted | `metrics.render()` — five signals in Prometheus text, served at `/metrics` |
+| Webhooks were specified and not implemented | HMAC over `timestamp.body`, with a five-minute replay window in both directions |
+| Every render in CI is CPU | `build/benchmark.py` and a weekly GPU workflow that records throughput beside the GPU, driver and ffmpeg build |
+| The model path had no reference implementation | `golden/plan_corpus.json` and a replay test; the corpus declares it is not evidence about a model |
+| The identity corpus had no data | Unchanged, and stated as such — the contract is what this repository can produce before the data exists |
+
+Also fixed: §0 had accumulated a paragraph per version and by v2.5 was explaining v1.1. It now carries the current version only, and the table below it carries the history.
+
+**Still open after v2.5:** six findings, in `docs/reviews/v2.6-candidates.md`. The first is that tokens never expire.
+
+---
+
 ## v2.4 — 22 November 2026
 
 **Basis:** fourteenth technical review, plus a full audit of the code and the tests.

@@ -25,7 +25,8 @@ Each version is a full standalone specification answering one external technical
 | v2.2 | Twelfth technical review | "The engine must survive a restart" | A durable store and worker (§18), content-sensitive render fixtures (§19.1), the repair band closed (§7.7), a corpus contract (§8.6), a perceptual fallback (§11.8), and overlays scheduled (§21) |
 | v2.3 | Thirteenth technical review | "The engine must stop cleanly" | Retry by class and quarantine (§18), acrossfade measured to the sample (§11.5), a corpus pipeline that runs (§8.6), a recorded fingerprint (§11.8), and the duplicate state machine deleted (§15) |
 | v2.4 | Fourteenth technical review | "The queue must behave" | Fairness across tenants (§17), backoff with jitter (§18), the DDL state fixed and checked (§13.3), the acrossfade content pinned (§11.5), overlays withdrawn (§11.7), the synthetic corpus guarded (§8.6) |
-| v2.5 | *Not started* | — | The six open findings in `docs/reviews/v2.5-candidates.md` — the first is a security defect |
+| v2.5 | Fifteenth technical review | "The surface must be defended" | Authorisation from a token (§14.5), Prometheus metrics (§17), signed webhooks (§15.3), a GPU benchmark workflow (§12.9), a plan corpus (§7.1) |
+| v2.6 | *Not started* | — | The six open findings in `docs/reviews/v2.6-candidates.md` — tokens never expire |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -298,6 +299,26 @@ v2.4 was preceded by a full audit of the code and the tests, which found seven d
 
 **Three documents the repository lacked.** `LICENSE` (all rights reserved, with a note on how to switch to MIT or Apache-2.0), `RELEASES.md` (every version, its basis, and what a release means when there is no binary), and `docs/repo/description.md` (the description, topics, scope and the five claims worth checking — kept in the repository because metadata in a web form is metadata nobody reviews).
 
+## 2m. The v2.5 round
+
+v2.5 built the three things a service has that a library does not: authorisation, telemetry and signed delivery. It also fixed a documentation defect that had been growing since v1.4.
+
+| # | Commit | What it did |
+|---|---|---|
+| 101 | `feat(auth): the tenant comes from a token` | `Principal`, `Tokens`, and `resolve()` with the narrow-never-widen rule |
+| 102 | `feat(metrics): expose the five signals the store can produce` | Prometheus text at `/metrics`, no dependency |
+| 103 | `feat(webhook): sign timestamp.body, not the body` | HMAC with a five-minute replay window in both directions |
+| 104 | `feat: a plan corpus and a GPU benchmark workflow` | Replay for §7.1's target; a matrix job that records hardware beside throughput |
+| 105 | `docs(spec): add the v2.5 source` | 13 anchored edits, including a §0 rewritten to describe this version |
+| 106 | `docs(spec): build v2.5 and archive v2.4` | 61 pages, 197 tests |
+| 107 | `docs: release notes for v2.5` | Changelog, version line, this section |
+
+**The security defect was four versions old.** `X-Tenant` decided the tenant, which meant the isolation tests were a test between two values the client had chosen — and the test suite was a worked example of the wrong pattern. The fix is a principal derived from a bearer token, a header that may narrow and never widen, and two different answers: 403 for an authenticated override attempt, 404 for a cross-tenant read, because one is a refusal and the other must not disclose existence.
+
+**§0 had become a changelog.** By v2.5 the "what changed in this version" section explained v1.1, the conform map and the audio handle rule — six versions of prose accumulating one paragraph at a time, burying the change a reader came for. It now carries the current version only; the table below it carries the history. That is a documentation defect the audit found, and the kind that no checker could: the numbers were right and the section was wrong.
+
+**And the workflow reproduced a fixed failure.** `benchmark.yml` needs a runner labelled `gpu` that does not exist, so it queues and never runs — the same shape as a test that skips, which v1.8 fixed for the layout checks. It is listed as a finding rather than quietly left in CI.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -318,14 +339,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The service trusts a tenant header | `reviews/v2.5-candidates.md` §1 | Every isolation claim — a client can name its own tenant |
-| No metrics: §17's signals are never emitted | §2 | p95 latency, first-attempt success, oldest job age |
-| Webhooks are specified and not implemented | §3 | Any event delivery, and the signature scheme |
-| Every render in CI is CPU | §4 | The NVENC capacity model |
-| The model path has no reference implementation | §5 | The 80% first-attempt target |
+| Tokens never expire, rotate or revoke | `reviews/v2.6-candidates.md` §1 | Any credential lifecycle — the store is a dictionary |
+| No rate limiting or abuse controls | §2 | Back-pressure that refuses rather than delays |
+| Metrics cover the store and not the worker | §3 | GPU memory, encoder utilisation, heartbeat age |
+| Webhook delivery has no loop, retry or dead-letter | §4 | At-least-once delivery, which §15.3 promises |
+| The benchmark workflow has no runner | §5 | Any measured throughput figure |
 | The identity corpus has no real data | §6 | Any accuracy claim |
 
-Nothing in that list is architectural. Two are consequences of v2.4's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Three are consequences of v2.5's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

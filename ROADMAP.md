@@ -55,8 +55,9 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 | **v2.9** | The render resumes | Chunked render proved byte-identical, segment publishing, VFR refused | **Done** | — |
 | **v2.10** | The file survives the join | Closed-GOP segments, container join, provider adapter, segment expiry | **Done** | — |
 | **v2.11** | The model has a seam | Two passes behind one interface, usable-encoder probe, retention policy | **Done** | — |
+| **v2.12** | Quality is a number | A rubric with four computable criteria, a bounded hook, a worker loop, a split suite | **Done** | — |
 | — | It renders at 4K | The §12.9 matrix measured, benchmarks filled. The code path exists and refuses without a device | 1–2 sessions | **A GPU machine** |
-| v3.0 | P0 complete | A provider adapter behind the seam, the prompt→file path end to end, evaluation corpus, the 80% target measured | 6–10 sessions | **Model budget** — the plumbing is done |
+| v3.0 | P0 complete | A provider adapter behind the seam, the prompt→file path end to end, evaluation corpus, the 80% target measured | 5–8 sessions | **Model budget** — the plumbing and the scoring are done |
 | v3.1 | Faces | Labelled corpus, accuracy measured, the feature enabled behind a flag | 2–3 sessions | **Procurement**, legal review |
 | v3.2 | Designed titles | Remotion to an alpha intermediate, composited at record frames, golden hash | 3–4 sessions | A decision to fund it |
 | v3.3 | The platform | `origin`/`params_hash` contract exercised against the 3D and dubbing engines | 2–3 sessions | Those engines' owners |

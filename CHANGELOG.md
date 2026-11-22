@@ -6,6 +6,27 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.12 — 22 November 2026
+
+**Basis:** twenty-second technical review.
+**Theme:** quality is a number. A rubric scores a plan on more than agreement with the template — and it immediately found the planner calling half a film a hook.
+
+| Finding | Resolved by |
+|---|---|
+| Agreement measured, quality did not | `rubric.score()` — hook, payoff, duration, pacing, and the taste judgement it refuses to make |
+| Nothing called `idle_sweep` | `Worker.run_forever()` — works when there is work, sweeps when there is not |
+| The suite exceeded five minutes | Two batches in `tests/run_all.sh` and the workflow, with fixtures cached |
+| **The template planner called half a film a hook** | `HOOK_MAX_FRAMES` bounds the hook at three seconds; the excess goes to the payoff |
+| Capacity, GPU signals, model, corpus | Blocked and stated |
+
+The hook defect was found *by* the rubric in this version, not carried from the last. §7.2 said the remainder goes to the payoff and never to the hook; even shares broke that whenever the shot count was small, and with two shots the hook was 22.5 s of a 45 s reel.
+
+Also: `check_consistency.py` caught this version's own front matter claiming seven findings when the table had eight.
+
+**Still open after v2.12:** six findings, in `docs/reviews/v2.13-candidates.md`. Four are gated on a purchase, and the rubric's thresholds are the one finding worth reading twice — they were written by the same person who fixed the planner they now pass.
+
+---
+
 ## v2.11 — 22 November 2026
 
 **Basis:** twenty-first technical review.

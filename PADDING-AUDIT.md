@@ -106,3 +106,40 @@ Of 26 versions:
 **Roughly 60% of the effort produced capability; roughly 15% produced the appearance of progress.** The 15% is concentrated in the last four versions, which is the clearest signal in this document: the project reached the end of what it could do alone, and kept producing versions anyway.
 
 The recommendation in `docs/reviews/v2.17-candidates.md` — buy the three things rather than cut another version — is the conclusion this audit supports.
+
+---
+
+# v2.18 — cutting the ceremony
+
+The audit above found the padding and stopped at a description. v2.18 acted on it, and the action was not what the description suggested.
+
+## What the audit said, and what it turned out to mean
+
+The measurement was that each version added four to eleven net lines to the specification while producing a 61-page rebuild, five documents and five commits. The obvious reading is *delete some documents*. That reading is wrong, and the reason is worth stating: the documents are the only reason this project can be audited at all. The changelog, the worklog and the review lists are what made the table at the top of this file computable instead of remembered.
+
+**The padding was not the documents. It was the twelve manual steps that produced them.**
+
+| Step | Was | Now |
+|---|---|---|
+| Copy the source to the new version | by hand | `cut_version.py` |
+| Renumber tables and listings | by hand, and wrong twice | `cut_version.py` |
+| Three checkers on the source | by hand, when remembered | `cut_version.py` |
+| Build the `.docx` | by hand | `cut_version.py` |
+| Extract it back and check again | by hand, sometimes skipped | `cut_version.py` |
+| Five commits with explicit paths | by hand, and one silently failed five times | still by hand — and the tool says so |
+
+## What it cost, measured
+
+A version before v2.18: twelve tool calls, of which roughly eight were mechanical, and two of them were re-runs after a checker caught something the hand-editing had broken.
+
+A version from v2.18: one command for the mechanical half, then the prose. The checkers run **twice** on every cut — source and artefact — instead of when someone remembers, which is a strict improvement in coverage that costs nothing.
+
+## What was deliberately not automated
+
+- **§0 prose and the findings table.** A tool that generated them would produce exactly the padding this file exists to measure.
+- **The release notes and the review list.** They are judgement about what mattered, and a template produces a list of what happened instead.
+- **The commits.** A commit message is a claim about intent; a generator would produce messages that describe diffs.
+
+## The lesson, in one line
+
+**Ritual is padding; record is not.** The right response to a ceremony that costs more than its content is to automate the ceremony, not to delete the record — and the audit could only tell the difference because the record existed.

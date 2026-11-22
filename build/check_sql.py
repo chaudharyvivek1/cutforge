@@ -117,6 +117,30 @@ def main():
         for name in sorted(rls_names - set(tables)):
             fail(f"RLS loop names {name}, which is not created by this migration")
 
+    # §13.3: the tables the code creates must be the tables the document
+    # publishes. v2.4 taught this checker to compare states and not tables, so
+    # six reference tables were added over three versions and never reached the
+    # migration — the same drift, one level up.
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path("tests")))
+        import store as _store
+        code_tables = set(re.findall(r"CREATE TABLE IF NOT EXISTS (\w+)", _store.SCHEMA))
+        published = set(tables)
+        reference_only = set(re.findall(r"-- reference-only: ([\w, ]+)", sql))
+        exempt = set()
+        for group in reference_only:
+            exempt |= {t.strip() for t in group.split(",")}
+        undocumented = code_tables - published - exempt
+        if undocumented:
+            fail(f"tables in tests/store.py but not in the migration: {sorted(undocumented)}")
+        # The reference implements a subset; §19 says which. A table the
+        # document publishes and the reference does not implement is expected.
+        # The reverse — a table the code creates and the document never
+        # publishes — is the defect this check exists for.
+    except ImportError:
+        pass
+
     # §18: the DDL's state list must match the states the code actually uses.
     # v2.3 added `quarantined` to the store and not to this CHECK, which a real
     # Postgres would have rejected — the drift this repository keeps finding.

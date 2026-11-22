@@ -80,6 +80,39 @@ def probe(path):
     }
 
 
+def build_conform_map(native_frames, src_fps, project_fps, vfr=False, pts_us=None):
+    """The map §5.9.4 specifies, as a pure function.
+
+    An affine map over variable-rate media is silently wrong — every frame
+    after the first irregularity lands in the wrong place and nothing errors.
+    So a VFR source without timestamps is refused rather than approximated.
+    """
+    src_fps, project_fps = F(src_fps), F(project_fps)
+    if vfr:
+        if not pts_us:
+            raise ValueError("VFR source needs packet timestamps; an affine map "
+                             "would be silently wrong (§5.9.4)")
+        table = [SR.round_half_away(F(pts, 1000000) * project_fps) for pts in pts_us]
+        return {
+            "kind": "table",
+            "source_rate": f"{src_fps.numerator}/{src_fps.denominator}",
+            "project_rate": f"{project_fps.numerator}/{project_fps.denominator}",
+            "native_frames": native_frames,
+            "conformed_frames": max(table) + 1 if table else 0,
+            "delta_frames": (max(table) + 1 if table else 0) - native_frames,
+            "table": table,
+        }
+    conformed = SR.frames_for_seconds(F(native_frames) / src_fps, project_fps)
+    return {
+        "kind": "affine",
+        "source_rate": f"{src_fps.numerator}/{src_fps.denominator}",
+        "project_rate": f"{project_fps.numerator}/{project_fps.denominator}",
+        "native_frames": native_frames,
+        "conformed_frames": conformed,
+        "delta_frames": conformed - native_frames,
+    }
+
+
 class Ingest:
     def __init__(self, store, workdir, tenant="tnt_a", project="prj_1"):
         self.store = store
@@ -121,16 +154,7 @@ class Ingest:
                         "-r", f"{project_fps.numerator}/{project_fps.denominator}",
                         "-c:v", "libx264", "-preset", "ultrafast", "-an",
                         str(out)], check=True)
-        conformed_frames = SR.frames_for_seconds(
-            F(asset["frames"]) / src_fps, project_fps)
-        conform_map = {
-            "kind": "affine",
-            "source_rate": f"{src_fps.numerator}/{src_fps.denominator}",
-            "project_rate": f"{project_fps.numerator}/{project_fps.denominator}",
-            "native_frames": asset["frames"],
-            "conformed_frames": conformed_frames,
-            "delta_frames": conformed_frames - asset["frames"],
-        }
+        conform_map = build_conform_map(asset["frames"], src_fps, project_fps)
         params = f"conform:{project_fps.numerator}/{project_fps.denominator}"
         self.store.add_derivative(self.tenant, asset["id"], "conform",
                                   out.stat().st_size, params, out)

@@ -46,10 +46,18 @@ class Transcript:
     """Words in *source* frames, which is what an ASR engine produces."""
     words: list = field(default_factory=list)      # [{text, start, end}]
 
+    @staticmethod
+    def validate(words):
+        """§10.4: word-level timings, or it is not a transcript."""
+        for n, word in enumerate(words):
+            if not {"text", "start", "end"} <= set(word):
+                raise ValueError(f"word {n} has no timing: {word!r}")
+        return words
+
     @classmethod
     def from_json(cls, path):
         data = json.loads(open(path).read())
-        return cls(words=data["words"])
+        return cls(words=cls.validate(data["words"]))
 
     def remap(self, conform_map, record_in=0, speed=1):
         """Source frames to record frames, through the conform map (§5.10).
@@ -69,3 +77,25 @@ class Transcript:
             end = record_in + SR.round_half_away((end) / F(speed))
             out.append({"text": word["text"], "start": start, "end": max(start + 1, end)})
         return out
+
+
+class Transcriber:
+    """The interface any ASR adapter must satisfy (§10.4)."""
+
+    def run(self, path=None):
+        raise NotImplementedError
+
+
+class RecordedTranscriber(Transcriber):
+    """A recorded transcript, so the pipeline is testable without a model.
+
+    Transcription needs a speech model this repository does not carry. What it
+    does carry is the contract and one recorded instance, which is enough to
+    prove that word times reach captions through the conform map.
+    """
+
+    def __init__(self, path):
+        self.path = path
+
+    def run(self, path=None):
+        return Transcript.from_json(path or self.path)

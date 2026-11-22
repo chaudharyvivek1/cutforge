@@ -10,7 +10,8 @@ A golden file is only as good as the review that approved it. Regenerating one i
 | `hdr.graph` | `hdr_ir()` | v1.8 | v2.1 — assembly added `[v_out]`; the tone-map chain is unchanged since v1.9 |
 | `wipe.graph` | `wipe_ir()` | v1.8 | v2.1 — assembly added `[v_out]`; the filters are unchanged since v1.8. Originally: `align: start` offsets the wipe by zero |
 | `lut.graph` | `lut_ir()` | v1.9 | v2.1 — assembly added `[v_out]`; `lut3d` unchanged since v1.9 |
-| `audio_mix.graph` | `audio_mix_ir()` | v1.9 | v2.1 — assembly added `[v_out]`; the `amix` and `loudnorm` stages are unchanged |
+| `audio_mix.graph` | `audio_mix_ir()` | v1.9 | v2.3 — each track now folds to its own label before the bus mixes them, so a per-track crossfade has somewhere to live |
+| `audio_transition.graph` | `audio_transition_ir()` | v2.3 | v2.3 — first approval: `acrossfade` between two clips on one track |
 | `sdr_to_hdr.graph` | `sdr_to_hdr_ir()` | v1.9 | v2.1 — assembly added `[v_out]`; the expansion chain is unchanged |
 
 ## The rule

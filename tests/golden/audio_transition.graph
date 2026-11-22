@@ -1,0 +1,5 @@
+[0:a]atrim=start_sample=0:end_sample=480480,asetpts=PTS-STARTPTS[a_a1];
+[1:a]atrim=start_sample=0:end_sample=480480,asetpts=PTS-STARTPTS[a_a2];
+[a_a1][a_a2]acrossfade=d=0.400400[ac_A1_1];
+[ac_A1_1]anull[a_t_A1];
+[a_t_A1]loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]

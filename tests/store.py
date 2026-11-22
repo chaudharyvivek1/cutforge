@@ -17,7 +17,18 @@ import time
 import uuid
 from contextlib import contextmanager
 
-TERMINAL = ("succeeded", "failed", "cancelled", "expired")
+TERMINAL = ("succeeded", "failed", "cancelled", "expired", "quarantined")
+
+# §18: the retry policy is keyed to the failure class, not to a counter alone.
+RETRYABLE = {
+    "TRANSIENT": True,        # network reset, 5xx from storage, worker eviction
+    "RESOURCE": True,         # GPU OOM, disk full — retry once on a larger worker
+    "PERMANENT": False,       # corrupt source, schema violation, missing asset
+    "BUDGET": False,          # a ceiling was hit; retrying spends more of it
+    "HOLD_EXPIRED": False,    # a timeout is not consent
+    "POISON": False,          # identical failure three times
+}
+MAX_ATTEMPTS = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs (
@@ -30,6 +41,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   segments_done   INTEGER NOT NULL DEFAULT 0,
   segments_total  INTEGER NOT NULL DEFAULT 0,
   payload         TEXT NOT NULL DEFAULT '{}',
+  degraded        INTEGER NOT NULL DEFAULT 0,
   error           TEXT,
   hold_deadline   REAL,
   claimed_by      TEXT,
@@ -93,11 +105,57 @@ class Store:
                 return None                     # somebody else won the race
             return dict(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
 
+    def transition(self, job_id, state, **fields):
+        """Move a job, unless it is terminal — terminal states are final."""
+        with self.tx() as db:
+            row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
+            if row is None or row["state"] in TERMINAL:
+                return dict(row) if row else None
+            sets = ["state=?", "updated_at=?"]
+            values = [state, self.clock()]
+            if "degraded" in fields:
+                sets.append("degraded=?")
+                values.append(1 if fields["degraded"] else 0)
+            if state == "awaiting_input" and "hold_deadline" in fields:
+                sets.append("hold_deadline=?")
+                values.append(fields["hold_deadline"])
+            values.append(job_id)
+            db.execute(f"UPDATE jobs SET {', '.join(sets)} WHERE id=?", values)
+            return dict(db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone())
+
     def checkpoint(self, job_id, segments_done):
         """§18: a long render checkpoints per segment, so a resume starts there."""
         with self.tx() as db:
             db.execute("UPDATE jobs SET segments_done=?, updated_at=? WHERE id=?",
                        (segments_done, self.clock(), job_id))
+
+    def fail(self, job_id, code, attempt_ceiling=MAX_ATTEMPTS):
+        """Retry by failure class, then quarantine (§18).
+
+        A job that fails identically three times is poison: retrying it is a
+        loop that costs money and never succeeds, which is the failure the
+        class exists to prevent.
+        """
+        with self.tx() as db:
+            row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
+            if row is None or row["state"] in TERMINAL:
+                return dict(row) if row else None
+            retryable = RETRYABLE.get(code, False)
+            attempts = row["attempt"]
+            if retryable and attempts < attempt_ceiling:
+                db.execute(
+                    "UPDATE jobs SET state='queued', attempt=attempt+1, error=?,"
+                    " claimed_by=NULL, updated_at=? WHERE id=?",
+                    (code, self.clock(), job_id))
+            elif retryable:
+                db.execute(
+                    "UPDATE jobs SET state='quarantined', error='POISON',"
+                    " claimed_by=NULL, updated_at=? WHERE id=?", (self.clock(), job_id))
+            else:
+                db.execute(
+                    "UPDATE jobs SET state='failed', error=?, claimed_by=NULL,"
+                    " updated_at=? WHERE id=?", (code, self.clock(), job_id))
+            return dict(db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone())
 
     def finish(self, job_id, state, error=None):
         """Terminal states are final: a finished job is never reopened."""

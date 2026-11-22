@@ -33,7 +33,7 @@ def rates(pairs, accept=0.35, reject=0.55):
         "fpr": counts["fp"] / (counts["fp"] + counts["tn"]) if counts["fp"] + counts["tn"] else 0.0,
         "fnr": counts["fn"] / (counts["tp"] + counts["fn"]) if counts["tp"] + counts["fn"] else 0.0,
         "grey_rate": counts["grey"] / detections if detections else 0.0,
-        "counts": dict(counts),
+        "counts": {k: counts[k] for k in ("tp", "fp", "fn", "tn", "grey")},
         "positives": positives,
         "negatives": negatives,
     }

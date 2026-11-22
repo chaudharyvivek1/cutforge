@@ -6,11 +6,13 @@ with a deadline, cancellation reaching a terminal state, and a tenant that
 cannot see another tenant's job.
 """
 import json
+import time
 import unittest
 import urllib.error
 import urllib.request
 
 import service as S
+import store as St
 
 
 def call(url, method="GET", body=None, headers=None):
@@ -27,7 +29,7 @@ def call(url, method="GET", body=None, headers=None):
 
 class TestService(unittest.TestCase):
     def setUp(self):
-        self.store = S.JobStore(hold_seconds=0.2)
+        self.store = St.Store(':memory:')
         self.server = S.Server(self.store).__enter__()
         self.url = self.server.url
 
@@ -65,9 +67,7 @@ class TestService(unittest.TestCase):
     def test_a_hold_expires_to_failed_not_delivered(self):
         # §8.5: a timeout is not consent
         _, body = self._submit()
-        self.store.transition("tnt_test", body["job_id"], "awaiting_input",
-                              hold_question={"q": "is this the CEO?"})
-        import time
+        self.store.transition(body["job_id"], "awaiting_input", hold_deadline=time.time() + 0.2)
         time.sleep(0.25)
         _, job = call(f"{self.url}/v1/jobs/{body['job_id']}")
         self.assertEqual(job["state"], "failed")
@@ -75,7 +75,7 @@ class TestService(unittest.TestCase):
 
     def test_an_answer_resumes_the_job(self):
         _, body = self._submit()
-        self.store.transition("tnt_test", body["job_id"], "awaiting_input")
+        self.store.transition(body["job_id"], "awaiting_input", hold_deadline=time.time() + 60)
         code, job = call(f"{self.url}/v1/jobs/{body['job_id']}/answer", "POST",
                          {"answer": "confirm"})
         self.assertEqual(code, 200)
@@ -84,7 +84,7 @@ class TestService(unittest.TestCase):
     def test_accepting_a_degraded_result_is_recorded(self):
         # §8.5: the only route to a degraded output, and it is visible
         _, body = self._submit()
-        self.store.transition("tnt_test", body["job_id"], "awaiting_input")
+        self.store.transition(body["job_id"], "awaiting_input", hold_deadline=time.time() + 60)
         _, job = call(f"{self.url}/v1/jobs/{body['job_id']}/answer", "POST",
                       {"answer": "accept_degraded"})
         self.assertTrue(job["degraded"])
@@ -95,7 +95,7 @@ class TestService(unittest.TestCase):
         self.assertEqual(code, 200)
         self.assertEqual(job["state"], "cancelled")
         # a cancelled job cannot be revived by a later transition
-        self.store.transition("tnt_test", body["job_id"], "running")
+        self.store.transition(body["job_id"], "running")
         _, again = call(f"{self.url}/v1/jobs/{body['job_id']}")
         self.assertEqual(again["state"], "cancelled")
 

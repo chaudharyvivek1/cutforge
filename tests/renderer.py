@@ -122,3 +122,16 @@ def mean_abs_difference(a, b):
     if len(a) != len(b):
         raise ValueError("fingerprints differ in length")
     return sum(abs(x - y) for x, y in zip(a, b)) / len(a)
+
+
+def render_audio_raw(graph, inputs):
+    """The decoded samples themselves, for asserting a length in samples."""
+    cmd = [FFMPEG, "-y", "-loglevel", "error"]
+    for path in inputs:
+        cmd += ["-i", str(path)]
+    cmd += ["-filter_complex", graph, "-map", "[a_mix]",
+            "-f", "s16le", "-ac", "2", "-ar", "48000", "-"]
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.decode()[-800:])
+    return result.stdout

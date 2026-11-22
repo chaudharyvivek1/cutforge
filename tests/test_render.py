@@ -92,8 +92,8 @@ class TestCompilerFixturesRender(unittest.TestCase):
         import assets
         cls.tmp = Path(tempfile.mkdtemp())
         cls.a = assets.appendix_a_assets(cls.tmp)
-        cls.music = assets.audio(cls.tmp / "music.wav", tone=440)
-        cls.dialogue = assets.audio(cls.tmp / "dialogue.wav", tone=660)
+        cls.music = assets.audio(cls.tmp / "music.wav", seconds=12, tone=440)
+        cls.dialogue = assets.audio(cls.tmp / "dialogue.wav", seconds=12, tone=660)
         cls.hashes = R.load_hashes(HASHES)
 
     @classmethod
@@ -115,6 +115,19 @@ class TestCompilerFixturesRender(unittest.TestCase):
         digest = R.render_raw(graph, [self.a[x] for x in
                                       ["ast_a91", "ast_b07", "ast_c13", "ast_d22"]])
         self.assertEqual(digest, self._recorded("appendix_a_compiled")["sha256"])
+
+    def test_an_acrossfade_renders_to_the_expected_length(self):
+        # §11.5's acceptance test: the decoded sample count, not just a hash
+        from fractions import Fraction as F
+        graph = C.compile_ir(C.audio_transition_ir())
+        raw = R.render_audio_raw(graph, [self.music, self.dialogue])
+        samples = len(raw) // 4                       # 16-bit stereo
+        expected = R.samples_for(588, F(30000, 1001)) if hasattr(R, "samples_for") else None
+        if expected is None:
+            import spec_rules as SR
+            expected = SR.samples_for(588, F(30000, 1001))
+        self.assertEqual(samples, expected)
+        self.assertLessEqual(abs(samples - expected), 1)
 
     def test_the_audio_bus_renders(self):
         graph = C.compile_ir(C.audio_only_ir())

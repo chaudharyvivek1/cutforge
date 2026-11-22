@@ -45,6 +45,50 @@ class TestPersistence(unittest.TestCase):
         self.store = St.Store(":memory:")
 
 
+class TestRetryPolicy(unittest.TestCase):
+    """§18 — retry by failure class, then quarantine."""
+
+    def setUp(self):
+        self.store = St.Store(":memory:")
+
+    def test_a_transient_failure_is_retried(self):
+        job, _ = self.store.submit("tnt_a", "render")
+        self.store.claim("w1")
+        result = self.store.fail(job["id"], "TRANSIENT")
+        self.assertEqual(result["state"], "queued")
+        self.assertEqual(result["attempt"], 2)
+
+    def test_a_permanent_failure_is_not_retried(self):
+        job, _ = self.store.submit("tnt_a", "render")
+        self.store.claim("w1")
+        result = self.store.fail(job["id"], "PERMANENT")
+        self.assertEqual(result["state"], "failed")
+
+    def test_a_budget_failure_is_not_retried(self):
+        # retrying spends more of a budget that is already exhausted
+        job, _ = self.store.submit("tnt_a", "render")
+        self.store.claim("w1")
+        self.assertEqual(self.store.fail(job["id"], "BUDGET")["state"], "failed")
+
+    def test_three_identical_failures_quarantine(self):
+        # §18's poison class: a loop that costs money and never succeeds
+        job, _ = self.store.submit("tnt_a", "render")
+        for _ in range(3):
+            self.store.claim("w1")
+            result = self.store.fail(job["id"], "TRANSIENT")
+            if result["state"] == "quarantined":
+                break
+        self.assertEqual(result["state"], "quarantined")
+        self.assertEqual(result["error"], "POISON")
+
+    def test_a_quarantined_job_is_not_claimed(self):
+        job, _ = self.store.submit("tnt_a", "render")
+        for _ in range(3):
+            self.store.claim("w1")
+            self.store.fail(job["id"], "TRANSIENT")
+        self.assertIsNone(self.store.claim("w2"))
+
+
 class TestWorker(unittest.TestCase):
     def setUp(self):
         self.store = St.Store(":memory:")

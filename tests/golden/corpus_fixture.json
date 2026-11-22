@@ -1,0 +1,13 @@
+{
+  "_note": "A synthetic corpus, committed so the §8.6 pipeline runs end to end in CI. It is NOT a measure of real accuracy: the distances are drawn from two clusters, not from faces. The real corpus is procurement.",
+  "pairs": [
+    {"id": "p01", "distance": 0.21, "same_person": true,  "conditions": ["lighting", "angle", "occlusion", "age"]},
+    {"id": "p02", "distance": 0.18, "same_person": true,  "conditions": ["lighting", "angle", "occlusion", "age"]},
+    {"id": "p03", "distance": 0.31, "same_person": true,  "conditions": ["lighting", "angle", "occlusion", "age"]},
+    {"id": "p04", "distance": 0.24, "same_person": true,  "conditions": ["lighting", "angle", "occlusion", "age"]},
+    {"id": "n01", "distance": 0.88, "same_person": false, "conditions": ["lighting", "angle", "occlusion", "age"]},
+    {"id": "n02", "distance": 0.94, "same_person": false, "conditions": ["lighting", "angle", "occlusion", "age"]},
+    {"id": "n03", "distance": 0.72, "same_person": false, "conditions": ["lighting", "angle", "occlusion", "age"]},
+    {"id": "n04", "distance": 0.81, "same_person": false, "conditions": ["lighting", "angle", "occlusion", "age"]}
+  ]
+}

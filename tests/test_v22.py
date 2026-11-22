@@ -70,6 +70,24 @@ class TestCorpusContract(unittest.TestCase):
         self.assertTrue(any("distance" in p for p in Co.validate(entries)))
 
 
+class TestCorpusPipeline(unittest.TestCase):
+    """§8.6 — the loader, the validator and the rates, on a committed fixture."""
+
+    def test_the_fixture_corpus_loads_and_measures(self):
+        data = Co.load(Path(__file__).parent / "golden" / "corpus_fixture.json")
+        pairs = [(e["distance"], e["same_person"]) for e in data["pairs"]]
+        import accuracy as A
+        result = A.rates(pairs)
+        self.assertEqual(result["counts"]["fp"], 0)
+        self.assertEqual(result["counts"]["fn"], 0)
+        self.assertEqual(A.meets_targets(result), [])
+
+    def test_a_malformed_fixture_is_rejected(self):
+        data = Co.load(Path(__file__).parent / "golden" / "corpus_fixture.json")
+        data["pairs"][0].pop("conditions")
+        self.assertTrue(Co.validate(data["pairs"]))
+
+
 class TestWorkerResume(unittest.TestCase):
     """§18 — a job survives its worker, on disk."""
 

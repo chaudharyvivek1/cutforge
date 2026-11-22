@@ -56,32 +56,56 @@ def compile_ir(ir):
     if assemble:
         graph += ";\n" + assemble
 
-    bus = _audio_bus(seq)
+    bus = _audio_bus(seq, fps)
     if bus:
         graph += ";\n" + bus
     return graph
 
 
-def _audio_bus(seq):
+def _audio_bus(seq, fps):
     """§11.1: one mixed, loudness-normalised bus, not one stream per track.
 
-    v1.8 emitted a chain per audio item and never mixed them, so a timeline
-    with music and dialogue produced two streams and the renderer took the
-    first. The mix is where ducking and normalisation belong.
+    A track with transitions is folded with `acrossfade` before the mix. That
+    is §5.7's audio handle rule meeting ffmpeg for the first time in v2.3: the
+    overlap is a record boundary converted to samples once, never a rounded
+    half doubled.
     """
-    labels = []
+    per_track = []
     for track in seq["tracks"]:
         if track["kind"] != "audio" or track.get("enabled", True) is False:
             continue
-        labels.extend(f"[a_{item['id']}]" for item in track["items"]
-                      if item.get("kind") == "clip")
-    if not labels:
+        items = [i for i in track["items"] if i.get("kind") == "clip"]
+        if not items:
+            continue
+        by_pair = {(t["between"][0], t["between"][1]): t
+                   for t in track.get("transitions", []) or []}
+        filters = []
+        current = f"a_{items[0]['id']}"
+        for step, (prev, nxt) in enumerate(zip(items, items[1:]), start=1):
+            trans = by_pair.get((prev["id"], nxt["id"]))
+            if trans:
+                seconds = float(F(trans["frames"]) / fps)
+                out = f"ac_{track['id']}_{step}"
+                filters.append(f"[{current}][a_{nxt['id']}]acrossfade=d={seconds:.6f}[{out}]")
+            else:
+                out = f"am_{track['id']}_{step}"
+                filters.append(f"[{current}][a_{nxt['id']}]amix=inputs=2:normalize=0[{out}]")
+            current = out
+        label = f"a_t_{track['id']}"
+        filters.append(f"[{current}]anull[{label}]")
+        per_track.append((label, filters))
+
+    if not per_track:
         return ""
+    lines = [f for _, fs in per_track for f in fs]
+    labels = [l for l, _ in per_track]
     if len(labels) == 1:
-        return f"{labels[0]}loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]"
-    return ("".join(labels)
-            + f"amix=inputs={len(labels)}:normalize=0:dropout_transition=0,"
-              "loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]")
+        lines.append(f"[{labels[0]}]loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]")
+    else:
+        joined = "".join(f"[{l}]" for l in labels)
+        lines.append(f"{joined}amix=inputs={len(labels)}:normalize=0"
+                     f":dropout_transition=0,loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]")
+    return ";\n".join(lines)
 
 
 def _video_item(item, fps, width, height, ir):
@@ -399,6 +423,36 @@ def audio_only_ir():
                     {"kind": "clip", "id": "a2", "asset": "dlg_02",
                      "source": {"in_sample": 0, "out_sample": 480480},
                      "record": {"in": 0, "out": 300}}]},
+            ],
+        },
+        "metadata": {"assets": [{"id": "mus_01"}, {"id": "dlg_02"}]},
+    }
+
+
+def audio_transition_ir():
+    """Two audio clips on one track, joined by a dissolve.
+
+    §5.7's audio handle rule — a record boundary converted to samples once —
+    has never met ffmpeg. This is the fixture that makes it do so.
+    """
+    return {
+        "schema": "timeline/1.9",
+        "project": {"id": "prj_xfade", "fps": {"num": "30000", "den": "1001"},
+                    "resolution": [180, 320], "color_space": "rec709"},
+        "sequence": {
+            "id": "seq_xfade", "primary_video_track": "V1",
+            "content_duration_frames": 588, "render_duration_frames": 588,
+            "tracks": [
+                {"id": "A1", "kind": "audio",
+                 "items": [
+                     {"kind": "clip", "id": "a1", "asset": "mus_01",
+                      "source": {"in_sample": 0, "out_sample": 480480},
+                      "record": {"in": 0, "out": 300}},
+                     {"kind": "clip", "id": "a2", "asset": "dlg_02",
+                      "source": {"in_sample": 0, "out_sample": 480480},
+                      "record": {"in": 288, "out": 588}},
+                 ],
+                 "transitions": [{"between": ["a1", "a2"], "type": "dissolve", "frames": 12}]},
             ],
         },
         "metadata": {"assets": [{"id": "mus_01"}, {"id": "dlg_02"}]},

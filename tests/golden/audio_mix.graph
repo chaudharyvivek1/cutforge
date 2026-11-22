@@ -10,4 +10,6 @@
 [xf_2][v_c4]xfade=transition=fade:duration=0.400400:offset=0.000000[xf_3];
 [xf_3][v_c5]xfade=transition=fade:duration=0.400400:offset=0.000000[xf_4];
 [xf_4]null[v_out];
-[a_a1][a_a2]amix=inputs=2:normalize=0:dropout_transition=0,loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]
+[a_a1]anull[a_t_A1];
+[a_a2]anull[a_t_A2];
+[a_t_A1][a_t_A2]amix=inputs=2:normalize=0:dropout_transition=0,loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]

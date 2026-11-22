@@ -239,6 +239,37 @@ def pipe_table(doc, rows):
 
 
 # ---------------------------------------------------------------------- main
+def normalise_package(path, when=b"2026-11-22T00:00:00Z"):
+    """Make the .docx byte-reproducible.
+
+    python-docx stamps the package with the wall clock and writes the zip in
+    whatever order the parts were created, so two builds of the same source
+    differ. §11.6 defines reproducibility as "same manifest, same bytes"; the
+    document should meet its own standard, or a reviewer cannot tell a content
+    change from a packaging one.
+    """
+    import re
+    import zipfile
+
+    tmp = path.with_suffix(".tmp")
+    with zipfile.ZipFile(path) as zin:
+        parts = [(i.filename, zin.read(i.filename)) for i in zin.infolist()]
+
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+        for name, data in sorted(parts, key=lambda p: p[0]):
+            if name == "docProps/core.xml":
+                for tag in (b"created", b"modified"):
+                    data = re.sub(
+                        rb"<dcterms:" + tag + rb"[^>]*>[^<]*</dcterms:" + tag + rb">",
+                        b"<dcterms:" + tag + b' xsi:type="dcterms:W3CDTF">' + when
+                        + b"</dcterms:" + tag + b">",
+                        data)
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            zout.writestr(info, data)
+    tmp.replace(path)
+
+
 def main():
     src, dst = Path(sys.argv[1]), Path(sys.argv[2])
     fig_dir = Path(sys.argv[3]) if len(sys.argv) > 3 else dst.parent
@@ -320,6 +351,7 @@ def main():
 
     dst.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(dst))
+    normalise_package(dst)
     print(f"{dst}  ({len(doc.paragraphs)} paragraphs, {len(doc.tables)} tables)")
 
 

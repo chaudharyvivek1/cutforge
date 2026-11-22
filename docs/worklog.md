@@ -37,7 +37,8 @@ Each version is a full standalone specification answering one external technical
 | v2.14 | Twenty-fourth technical review | "The set must disagree" | Twenty labelled plans (§19.2), the quality gate in the service (§7.5), a maximum cut rate |
 | v2.15 | Twenty-fifth technical review | "Write the expectations first" | Blind labelling (§19.2), one shared rule for hook and cuts, a gate that refuses (§7.5) |
 | v2.16 | Twenty-sixth technical review | "Measure what the second opinion adds" | A shape judge (§19.2), a coverage measurement, expectation-list comparison |
-| v2.17 | *Not started* | — | The six open findings in `docs/reviews/v2.17-candidates.md` — seventh version with the same four purchases |
+| v2.17 | Twenty-seventh technical review | "What does a second opinion buy?" | The slideshow (§19.2), both judges in the gate, `PADDING-AUDIT.md` |
+| v2.18 | *Not started* | — | The five open findings in `docs/reviews/v2.18-candidates.md` — four are purchases, and a version would close nothing |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -521,6 +522,21 @@ v2.16 built a second opinion and measured that it adds nothing, which is the mos
 
 **And the shape judge's first exemption was wrong.** It exempted plans with more than six cuts as "montages", which let seven evenly divided shots — the exact case it exists to catch — pass. The exemption is now the mean shot length: a cut faster than one per three seconds is a montage, anything slower that is perfectly even was divided rather than edited.
 
+## 2y. The v2.17 round
+
+v2.17 answered the question the previous version had left open, and then audited the project's own padding.
+
+| # | Commit | What it did |
+|---|---|---|
+| 153 | `feat: the slideshow, and a gate that needs both judges` | One plan only the shape judge sees; 422 for it |
+| 154 | `docs: the padding audit` | What twenty-seven versions actually changed, measured |
+| 155 | `docs(spec): add the v2.17 source` | 11 anchored edits |
+| 156 | `docs: release notes for v2.17` | Changelog, version line, this section |
+
+**The shape judge's domain is one plan wide, and that is enough.** v2.16 measured zero unique catches. The finding left a judgement open — is a film that passes every threshold and divides its body evenly bad? — and answering it produced the plan: fifteen identical shots. Every threshold passes; the spread is zero; a viewer closes the tab. The gate now requires both judges, and the coverage number reads one way and five the other.
+
+**And the audit is the more useful artefact.** Measured from git rather than remembered: the last seven versions each added four to eleven net lines to a 2,770-line specification, and four of them — v2.13 to v2.16 — were one activity in four instalments. The repository now says that in its own voice, next to the review list that has named the same four purchases for eight versions.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -541,12 +557,11 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The capacity model is unmeasured | `reviews/v2.17-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
+| The capacity model is unmeasured | `reviews/v2.18-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
 | Three GPU signals remain unemitted | §2 | GPU memory, encoder utilisation, success rate — **a GPU machine** |
 | No model has produced a plan | §3 | The product's premise — **a model budget** |
 | The identity corpus has no data | §4 | Any accuracy claim — **procurement** |
 | The blind judge still has one author | §5 | Whether the rubric's blind spots survive a second person |
-| No labelled plan the shape judge alone catches | §6 | Whether an evenly divided body is a bad film |
 
 Nothing in that list is architectural. Four are gated on a purchase — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 

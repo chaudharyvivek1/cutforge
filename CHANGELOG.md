@@ -6,6 +6,22 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.17 — 22 November 2026
+
+**Basis:** twenty-seventh technical review.
+**Theme:** the second judge has exactly one thing only it can see, and the gate needs both judges because of it.
+
+| Finding | Resolved by |
+|---|---|
+| No labelled plan the shape judge alone catches | The judgement was made: fifteen identical shots are a slideshow. They pass every threshold and the shape judge rejects them — its unique domain, one plan wide. The gate now requires both judges. |
+| Capacity, GPU signals, model, corpus, second author | Blocked and stated |
+
+Also added: **`PADDING-AUDIT.md`** — what twenty-seven versions actually changed, measured rather than remembered. The last seven each added 4–11 net lines to a 2,770-line specification, and four of them were the same activity at larger scale.
+
+**Still open after v2.17:** five findings, four of which are purchases. The list now says a v2.18 would close nothing.
+
+---
+
 ## v2.16 — 22 November 2026
 
 **Basis:** twenty-sixth technical review.

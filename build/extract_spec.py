@@ -26,7 +26,14 @@ APPX_RE = re.compile(r"^(Appendix [A-C])\b")
 
 
 def is_code(par):
-    runs = [r for r in par.runs if r.text.strip()]
+    """True when every run in the paragraph is monospaced.
+
+    Whitespace-only runs count. A blank line inside a listing is a paragraph
+    containing one space in Consolas, and filtering it out used to end the
+    fence there — so every code block with a blank line was truncated on
+    extraction, silently, since the figures live in prose rather than in code.
+    """
+    runs = list(par.runs)
     if not runs:
         return False
     mono = [r for r in runs if (r.font.name or "").lower() in CODE_FONTS]
@@ -141,7 +148,7 @@ def main():
         # an inline picture lives in a run, not in the text
         has_picture = "graphicData" in block._p.xml
 
-        if not text and not has_picture:
+        if not text and not has_picture and not is_code(block):
             if code_buf:
                 lines += ["```"] + code_buf + ["```", ""]
                 code_buf = []

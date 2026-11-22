@@ -26,7 +26,8 @@ Each version is a full standalone specification answering one external technical
 | v2.3 | Thirteenth technical review | "The engine must stop cleanly" | Retry by class and quarantine (§18), acrossfade measured to the sample (§11.5), a corpus pipeline that runs (§8.6), a recorded fingerprint (§11.8), and the duplicate state machine deleted (§15) |
 | v2.4 | Fourteenth technical review | "The queue must behave" | Fairness across tenants (§17), backoff with jitter (§18), the DDL state fixed and checked (§13.3), the acrossfade content pinned (§11.5), overlays withdrawn (§11.7), the synthetic corpus guarded (§8.6) |
 | v2.5 | Fifteenth technical review | "The surface must be defended" | Authorisation from a token (§14.5), Prometheus metrics (§17), signed webhooks (§15.3), a GPU benchmark workflow (§12.9), a plan corpus (§7.1) |
-| v2.6 | *Not started* | — | The six open findings in `docs/reviews/v2.6-candidates.md` — tokens never expire |
+| v2.6 | Sixteenth technical review | "The credential must have a life" | Expiry, rotation and revocation (§14.5), a per-tenant rate limit (§15.1), a worker heartbeat gauge (§17), delivery with retry and dead-letter (§15.3), the benchmark workflow made manual |
+| v2.7 | *Not started* | — | The six open findings in `docs/reviews/v2.7-candidates.md` — nothing sends a webhook yet |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -319,6 +320,26 @@ v2.5 built the three things a service has that a library does not: authorisation
 
 **And the workflow reproduced a fixed failure.** `benchmark.yml` needs a runner labelled `gpu` that does not exist, so it queues and never runs — the same shape as a test that skips, which v1.8 fixed for the layout checks. It is listed as a finding rather than quietly left in CI.
 
+## 2n. The v2.6 round
+
+v2.6 gave the credential a life, the queue a limit, and delivery a sender — the last of which it only half did, and the list says so.
+
+| # | Commit | What it did |
+|---|---|---|
+| 108 | `feat(auth): expiry, rotation and revocation` | `expires_at`, per-request revocation, one-step rotation |
+| 109 | `feat: a per-tenant token bucket` | Burst allowance, 429 with `Retry-After` |
+| 110 | `feat: delivery with retry and dead-letter` | Events on terminal state, idempotent by unique constraint |
+| 111 | `feat(metrics): the worker heartbeat gauge` | From claim timestamps the store already records |
+| 112 | `docs(spec): add the v2.6 source` | 13 anchored edits |
+| 113 | `docs(spec): build v2.6 and archive v2.5` | 61 pages, 218 tests |
+| 114 | `docs: release notes for v2.6` | Changelog, version line, this section |
+
+**A rate limit and a concurrency cap are not the same mechanism.** v2.5 had a cap that made a tenant wait and called it back-pressure. A cap delays and a limit refuses, and only one of them tells the client to come back — which is why the reference now returns 429 with `Retry-After` rather than growing a queue.
+
+**The duplicate-definition defect appeared again**, this time in `auth.py`: a second `__init__` silently shadowed the first, written in the same file that was fixing a different problem. `pyflakes` caught it in the audit before it shipped, and it is the fourth instance of the same class in this repository — two definitions of one thing, each correct, one of them invisible.
+
+**What is still not true.** Delivery retries and dead-letters, and nothing posts. `pending_deliveries()` returns rows and no loop consumes them, so §15.3's at-least-once promise is at-least-once *bookkeeping*. That is finding 1 of the v2.7 list, and it is the third version in which delivery has been nearly finished.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -339,14 +360,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| Tokens never expire, rotate or revoke | `reviews/v2.6-candidates.md` §1 | Any credential lifecycle — the store is a dictionary |
-| No rate limiting or abuse controls | §2 | Back-pressure that refuses rather than delays |
-| Metrics cover the store and not the worker | §3 | GPU memory, encoder utilisation, heartbeat age |
-| Webhook delivery has no loop, retry or dead-letter | §4 | At-least-once delivery, which §15.3 promises |
-| The benchmark workflow has no runner | §5 | Any measured throughput figure |
+| Nothing sends a delivery; the dispatcher does not exist | `reviews/v2.7-candidates.md` §1 | At-least-once delivery — the rows are written and nothing posts them |
+| Quotas cover submissions, not storage or render minutes | §2 | The two quotas that cost money |
+| Revocation is per-process and per-restart | §3 | Any revocation — the set is in memory |
+| The rate limiter has no shared state | §4 | Two workers behind a load balancer each allow a full burst |
+| Three GPU signals remain unemitted | §5 | GPU memory, encoder utilisation, success rate by kind |
 | The identity corpus has no real data | §6 | Any accuracy claim |
 
-Nothing in that list is architectural. Three are consequences of v2.5's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Two are consequences of v2.6's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

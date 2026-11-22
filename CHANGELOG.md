@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.6 — 22 November 2026
+
+**Basis:** sixteenth technical review.
+**Theme:** the credential has a life. Tokens expire, rotate and revoke; a rate limit refuses rather than delays; a delivery that fails is retried and then dead-lettered.
+
+| Finding | Resolved by |
+|---|---|
+| Tokens never expired, rotated or revoked | `expires_at`/`issued_at` on the principal, revocation per request, rotation in one step |
+| No rate limiting | `ratelimit.Buckets` — a per-tenant token bucket, 429 with `Retry-After` |
+| Metrics covered the store, not the worker | `cutforge_worker_heartbeat_age_seconds` from claim timestamps |
+| No delivery loop, retry or dead-letter | Events on terminal state, idempotent by unique constraint; backoff; dead letter after five |
+| The benchmark workflow had no runner | Manual-only, with the reason in the workflow and the docs |
+| The identity corpus has no data | Unchanged, and stated as such |
+
+Also fixed: a duplicate `__init__` in `auth.py` that silently shadowed the first — the same defect the v2.4 audit found in the planner, appearing again in the file written to fix a different problem.
+
+**Still open after v2.6:** six findings, in `docs/reviews/v2.7-candidates.md`. The first is that nothing actually sends a webhook.
+
+---
+
 ## v2.5 — 22 November 2026
 
 **Basis:** fifteenth technical review.

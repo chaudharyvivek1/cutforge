@@ -273,6 +273,13 @@ def main():
     check("provisioned TB", round(provisioned_gb / 1000, 2), 12.96, 0.005)
     check("provisioned / delivered", round(provisioned_gb / 3000, 1), 4.3, 0.05)
 
+    # ------------------------ v1.8  the commitment break-even
+    commit_cost = 12960 * 0.012
+    check("commitment cost $", round(commit_cost, 2), 155.52, 0.005)
+    breakeven = 1000 + (commit_cost - 90) / 0.05
+    check("break-even GB", round(breakeven, 1), 2310.4, 0.05)
+    check("break-even TB", round(breakeven / 1000, 2), 2.31, 0.005)
+
     # ------------------------------------------------ report
     print(f"{CHECKS} figures checked against first principles.")
     if FAILURES:

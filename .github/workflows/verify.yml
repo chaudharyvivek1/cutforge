@@ -38,3 +38,22 @@ jobs:
           python build/extract_spec.py "$DOCX" /tmp/roundtrip.md /tmp/figs
           python build/check_figures.py /tmp/roundtrip.md
           python build/check_consistency.py /tmp/roundtrip.md
+
+  layout:
+    # The rendered-page check needs LibreOffice, which the default image lacks.
+    # It runs on main only, because it costs two minutes and catches the class
+    # of defect that only a page can show: split rows, collapsed builds.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the renderer and the tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libreoffice-writer
+          pip install --quiet python-docx pymupdf
+      - name: The document, rendered and read
+        run: python -m unittest discover -s tests -t tests -k TestLayout -v

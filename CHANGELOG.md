@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.8 — 22 November 2026
+
+**Basis:** eighteenth technical review.
+**Theme:** assets exist. Upload is probed and deduplicated, the conform map is produced where it belongs, and shots are detected rather than assumed.
+
+| Finding | Resolved by |
+|---|---|
+| No asset table and no ingest | `assets`/`asset_derivatives` tables and `ingest.Ingest` — probe, deduplicate, proxy, conform with its map beside the file |
+| Storage quota unenforceable | `stored_bytes()` and `consume_storage()`, refusing rather than truncating |
+| Analysis unimplemented | `analysis.shots()` from ffmpeg's scene score; `Transcript.remap()` through the conform map |
+| Three GPU signals | Unchanged and stated |
+| Webhook ordering unstated | §15.3 now says ordering is not guaranteed |
+| No usage rollover test | A test over two periods |
+
+Also fixed: the probe stored a decimal frame rate (`29.97` as `2997/100`), which §5.1 forbids. It now snaps to the rational the decimal rounds — the test asserts `30000/1001` comes back as itself.
+
+**Still open after v2.8:** six findings, in `docs/reviews/v2.9-candidates.md`. The first is that the reference store has six tables the published migration does not.
+
+---
+
 ## v2.7 — 22 November 2026
 
 **Basis:** seventeenth technical review.

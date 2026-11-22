@@ -28,7 +28,8 @@ Each version is a full standalone specification answering one external technical
 | v2.5 | Fifteenth technical review | "The surface must be defended" | Authorisation from a token (§14.5), Prometheus metrics (§17), signed webhooks (§15.3), a GPU benchmark workflow (§12.9), a plan corpus (§7.1) |
 | v2.6 | Sixteenth technical review | "The credential must have a life" | Expiry, rotation and revocation (§14.5), a per-tenant rate limit (§15.1), a worker heartbeat gauge (§17), delivery with retry and dead-letter (§15.3), the benchmark workflow made manual |
 | v2.7 | Seventeenth technical review | "State must be shared" | The dispatcher posts (§15.3), tokens and revocations in the store (§16), shared buckets, render-minute quotas (§16.1), and `ROADMAP.md` |
-| v2.8 | *Not started* | — | The six open findings in `docs/reviews/v2.8-candidates.md` — the engine has no assets |
+| v2.8 | Eighteenth technical review | "The engine needs assets" | Asset tables and ingest (§10.1, §5.9), storage quota (§16.1), shot detection and transcript remap (§10.1, §5.10), the webhook ordering rule (§15.3) |
+| v2.9 | *Not started* | — | The six open findings in `docs/reviews/v2.9-candidates.md` — the store has tables the migration lacks |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -359,6 +360,24 @@ v2.7 moved three pieces of state out of a process and into the store, and made t
 
 **And the roadmap is the useful artefact.** `ROADMAP.md` states where the project stands, what is missing by area, a version list with effort ranges, the critical path, and the five decisions that are blocked on the owner rather than on work. It is the first document here that a person can use to plan, and it is written in the same voice as the rest: the estimates are ranges because the thing that has gone wrong every time is the layer nobody had executed.
 
+## 2p. The v2.8 round
+
+v2.8 built the subsystem everything else was waiting for. Every previous version had a gap downstream of "there are no assets", and this one removed it.
+
+| # | Commit | What it did |
+|---|---|---|
+| 118 | `feat: asset tables, derivatives and a storage quota` | Content-addressed, deduplicated, counted |
+| 119 | `feat(ingest): probe, proxy and the conform map` | The map §5.9 defines, produced where it belongs |
+| 120 | `feat(analysis): shot detection and transcript remap` | Cuts from the scene score; word times through the map |
+| 121 | `docs(spec): add the v2.8 source` | 13 anchored edits |
+| 122 | `docs: release notes for v2.8` | Changelog, version line, this section |
+
+**The conform map finally has a producer.** §5.9 has defined the map since v1.4 and every version since assumed it existed: the compiler consumes conformed frames and nothing made one. Ingest now writes the derivative and the map together — 250 frames at 25 fps become 300 at 29.97, delta +50 — and the test asserts the file contains exactly the frames the map promises. That is the difference between a specified assumption and an owned one.
+
+**A probe that stored 29.97 would have corrupted every conform.** ffmpeg prints frame rates as decimals, and the first version of the probe did the obvious thing and stored `2997/100`. The test caught it because §5.1 says a rate is never a rounding of a rate; the fix snaps a decimal back to the rational it rounds, and asserts `30000/1001` round-trips as itself.
+
+**And the round created the next version's largest finding.** The reference store now has six tables the published migration does not — `tokens`, `revocations`, `buckets`, `usage`, `webhook_endpoints`, `deliveries`. `check_sql.py` was taught in v2.4 to compare *states* between code and schema and was never taught to compare *tables*, which is what a checker written against one instance of a pattern will always do.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -379,14 +398,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| There is no asset table and no ingest pipeline | `reviews/v2.8-candidates.md` §1 | Everything downstream — rendering, analysis, storage, evaluation |
-| Storage quota is unenforceable without assets | §2 | The other half of §16.1 |
-| Analysis is entirely unimplemented | §3 | The planner has never seen a real transcript |
+| The reference store has eight tables the migration does not | `reviews/v2.9-candidates.md` §1 | Any table added to code and never to the specification |
+| No NVENC, no chunked render, no segment publishing | §2 | Every 4K claim and the whole resume path |
+| Transcription is a contract with no engine | §3 | The planner seeing a real transcript |
 | Three GPU signals remain unemitted | §4 | GPU memory, encoder utilisation, success rate |
-| Webhook ordering is not guaranteed and not stated | §5 | A receiver that assumes order |
-| The usage period has no rollover test | §6 | A quota that never resets |
+| VFR ingest emits an affine map | §5 | Any variable-rate capture — silently wrong rather than refused |
+| The identity corpus has no real data | §6 | Any accuracy claim |
 
-Nothing in that list is architectural. Two are consequences of v2.7's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Two are consequences of v2.8's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

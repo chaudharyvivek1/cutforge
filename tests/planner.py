@@ -94,11 +94,29 @@ def validate(plan_doc, fps):
 
     target = R.frames_for_seconds(F(plan_doc["duration_target_ms"], 1000), fps)
     band = R.duration_band(target, cursor)
-    if band in ("fallback",):
-        problems.append(f"duration in the fallback band ({band})")
+    if band == "fallback":
+        problems.append("duration in the fallback band")
+    elif band == "repair":
+        # §7.7: 2% to 5% is the band the repair loop exists to close
+        problems.append("duration in the repair band")
 
     for avoid in plan_doc.get("must_avoid", []):
         # a plan may not contain a shot whose labels were excluded; the
         # template planner filters before it chooses (§8.3)
         pass
     return problems
+
+
+def plan_short(request, deficit_frames=0):
+    """A plan that under-delivers, for exercising the repair band (§7.7).
+
+    The template planner is correct first time, so the repair loop never runs
+    on it — which means the loop was only ever tested against a hand-broken
+    structure. This shortens the payoff by a known amount, so the loop is
+    exercised through the band a real planner would land in.
+    """
+    plan_doc = plan(request)
+    if deficit_frames and plan_doc["structure"]:
+        last = plan_doc["structure"][-1]
+        last["record"][1] = max(last["record"][0] + 1, last["record"][1] - deficit_frames)
+    return plan_doc

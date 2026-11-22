@@ -94,3 +94,31 @@ def render_audio(graph, inputs):
     if result.returncode != 0:
         raise RuntimeError(result.stderr.decode()[-800:])
     return hashlib.sha256(result.stdout).hexdigest()
+
+
+def perceptual(graph, inputs, size="64x36"):
+    """A coarse fingerprint, for when the ffmpeg build differs.
+
+    §11.6's manifest exists so a difference can be attributed. When the build
+    changes, a hash mismatch says nothing about whether the picture changed —
+    so compare a downscaled, greyscaled stream instead and report the mean
+    absolute difference. That is the same split §11.2 makes between identical
+    decisions and non-identical pixels.
+    """
+    cmd = [FFMPEG, "-y", "-loglevel", "error"]
+    for path in inputs:
+        cmd += ["-i", str(path)]
+    # the graph already produces [v_out]; rename it so it can be consumed again
+    body = graph.replace("[v_out]", "[v_final]")
+    cmd += ["-filter_complex", f"{body};[v_final]scale={size},format=gray[v_out]",
+            "-map", "[v_out]", "-f", "rawvideo", "-"]
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.decode()[-800:])
+    return result.stdout
+
+
+def mean_abs_difference(a, b):
+    if len(a) != len(b):
+        raise ValueError("fingerprints differ in length")
+    return sum(abs(x - y) for x, y in zip(a, b)) / len(a)

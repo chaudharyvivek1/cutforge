@@ -121,6 +121,17 @@ class TestCompilerFixturesRender(unittest.TestCase):
         digest = R.render_audio(graph, [self.music, self.dialogue])
         self.assertEqual(digest, self._recorded("audio_mix_compiled")["sha256"])
 
+    def test_the_fixture_is_sensitive_to_asset_content(self):
+        # A hash that does not change when the inputs do is measuring nothing.
+        ir = C.appendix_a_ir()
+        ir["project"]["resolution"] = [180, 320]
+        graph = C.compile_ir(ir)
+        order = ["ast_a91", "ast_b07", "ast_c13", "ast_d22"]
+        base = R.render_raw(graph, [self.a[x] for x in order])
+        swapped = R.render_raw(graph, [self.a[x] for x in
+                                       ["ast_b07", "ast_a91", "ast_c13", "ast_d22"]])
+        self.assertNotEqual(base, swapped)
+
     def test_the_graph_carries_a_final_label(self):
         # v2.0 emitted transitions and never joined them: no [v_out] existed
         for fixture in (C.appendix_a_ir, C.overlay_ir, C.wipe_ir):

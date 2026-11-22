@@ -54,14 +54,15 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 | **v2.8** | Assets exist | Asset table, ingest, probe, proxy, conform, storage quota, shot detection | **Done** | — |
 | **v2.9** | The render resumes | Chunked render proved byte-identical, segment publishing, VFR refused | **Done** | — |
 | **v2.10** | The file survives the join | Closed-GOP segments, container join, provider adapter, segment expiry | **Done** | — |
-| v2.11 | It renders at 4K | NVENC path, the §12.9 matrix measured, benchmarks filled | 4–6 sessions | **A GPU machine** |
-| v3.0 | P0 complete | Model-driven planner (two passes), the prompt→file path end to end, evaluation corpus, the 80% target measured | 8–12 sessions | **Model budget**, v2.11 |
+| **v2.11** | The model has a seam | Two passes behind one interface, usable-encoder probe, retention policy | **Done** | — |
+| — | It renders at 4K | The §12.9 matrix measured, benchmarks filled. The code path exists and refuses without a device | 1–2 sessions | **A GPU machine** |
+| v3.0 | P0 complete | A provider adapter behind the seam, the prompt→file path end to end, evaluation corpus, the 80% target measured | 6–10 sessions | **Model budget** — the plumbing is done |
 | v3.1 | Faces | Labelled corpus, accuracy measured, the feature enabled behind a flag | 2–3 sessions | **Procurement**, legal review |
 | v3.2 | Designed titles | Remotion to an alpha intermediate, composited at record frames, golden hash | 3–4 sessions | A decision to fund it |
 | v3.3 | The platform | `origin`/`params_hash` contract exercised against the 3D and dubbing engines | 2–3 sessions | Those engines' owners |
 | v4.0 | Product surface | Whatever the platform needs — accounts, billing, UI | Not estimated here | Platform decisions |
 
-**Rough total to a system that turns a prompt into a rendered file at 1080p:** v2.11 (1080p only) + v3.0 ≈ **12–18 sessions**, before faces, titles or the platform — but both of those versions are gated on a purchase rather than on work, so the calendar is now set by procurement.
+**Rough total to a system that turns a prompt into a rendered file at 1080p:** ≈ **7–12 sessions**, and every one of them is gated on a purchase rather than on work. v2.11 proved that the remaining engineering is small; what is missing is a GPU, a model budget and a corpus.
 
 **To the full specification as written:** add v3.1, v3.2, v3.3 ≈ **24–36 sessions**, plus procurement and hardware.
 

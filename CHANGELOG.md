@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.11 — 22 November 2026
+
+**Basis:** twenty-first technical review.
+**Theme:** the model has a seam. Two passes behind one interface, testable against a recorded response, and a GPU that is absent now says so instead of encoding on a CPU.
+
+| Finding | Resolved by |
+|---|---|
+| No NVENC path | `encode_segment(codec=h264_nvenc)` plus `usable_encoder()` — a one-frame probe, because ffmpeg lists NVENC on every build and the failure is a missing device |
+| Three GPU signals | Unchanged and stated |
+| The model path had no implementation | `ModelClient` seam, `RecordedModel`, `plan_two_pass()`; `check_against_template()` measures agreement without a budget |
+| Chunked render never ran on a real timeline | Appendix A is now the fixture: a fully transitioned timeline must resolve to one segment |
+| Segment expiry had no policy | One hour by default, swept from `Worker.idle_sweep()` |
+| Identity corpus | Procurement |
+
+Also fixed: `has_encoder()` asked whether ffmpeg *listed* NVENC, which it always does; the guard now asks whether a one-frame encode works.
+
+**Still open after v2.11:** six findings, in `docs/reviews/v2.12-candidates.md`. Four are gated on a purchase — which is the signal that the next step is not another version.
+
+---
+
 ## v2.10 — 22 November 2026
 
 **Basis:** twentieth technical review.

@@ -10,5 +10,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v1.3.docx` | v1.3 | Third technical review — BigInt wire format, complete migration, P010 figures, RLS threat model |
 | `AI_Video_Editor_Architecture_v1.4.docx` | v1.4 | Fourth technical review — the conform map, speed that carries its audio, reconciled unit economics |
 | `AI_Video_Editor_Architecture_v1.5.docx` | v1.5 | Fifth technical review — VFR proved, atempo to the sample, handles at speed, storage and egress costed |
+| `AI_Video_Editor_Architecture_v1.6.docx` | v1.6 | Sixth technical review — a conformance suite, audio handles to the sample, the VFR map under speed |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

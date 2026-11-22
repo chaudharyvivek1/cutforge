@@ -65,6 +65,34 @@ CREATE TABLE IF NOT EXISTS webhook_endpoints (
   UNIQUE (tenant_id, id)
 );
 
+CREATE TABLE IF NOT EXISTS tokens (
+  token      TEXT PRIMARY KEY,
+  tenant_id  TEXT NOT NULL,
+  role       TEXT NOT NULL DEFAULT 'tenant',
+  subject    TEXT NOT NULL DEFAULT '',
+  issued_at  REAL NOT NULL,
+  expires_at REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS revocations (
+  token      TEXT PRIMARY KEY,
+  tenant_id  TEXT NOT NULL,
+  revoked_at REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS buckets (
+  tenant_id  TEXT PRIMARY KEY,
+  tokens     REAL NOT NULL,
+  updated_at REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS usage (
+  tenant_id      TEXT NOT NULL,
+  period         TEXT NOT NULL,
+  render_minutes REAL NOT NULL DEFAULT 0,
+  PRIMARY KEY (tenant_id, period)
+);
+
 CREATE TABLE IF NOT EXISTS deliveries (
   id              TEXT PRIMARY KEY,
   tenant_id       TEXT NOT NULL,
@@ -240,6 +268,63 @@ class Store:
             except sqlite3.IntegrityError:
                 pass                      # already emitted: idempotent by design
 
+    # ------------------------------------------------------- shared state
+    def store_token(self, token, tenant, role, subject, issued_at, expires_at):
+        with self.tx() as db:
+            db.execute("INSERT OR REPLACE INTO tokens (token, tenant_id, role, subject,"
+                       " issued_at, expires_at) VALUES (?,?,?,?,?,?)",
+                       (token, tenant, role, subject, issued_at, expires_at))
+
+    def token_record(self, token):
+        row = self.db.execute("SELECT * FROM tokens WHERE token=?", (token,)).fetchone()
+        return dict(row) if row else None
+
+    def revoke_token(self, token, tenant):
+        """Revocation must survive a restart and reach every process."""
+        with self.tx() as db:
+            db.execute("INSERT OR REPLACE INTO revocations (token, tenant_id, revoked_at)"
+                       " VALUES (?,?,?)", (token, tenant, self.clock()))
+
+    def is_revoked(self, token):
+        return self.db.execute("SELECT 1 FROM revocations WHERE token=?",
+                               (token,)).fetchone() is not None
+
+    def take_token(self, tenant, capacity, refill_per_second, now=None):
+        """A shared token bucket: one row per tenant, refilled on read.
+
+        Two workers behind a load balancer each keeping their own bucket would
+        allow capacity × workers, which is not the limit anyone configured.
+        """
+        now = self.clock() if now is None else now
+        with self.tx() as db:
+            row = db.execute("SELECT tokens, updated_at FROM buckets WHERE tenant_id=?",
+                             (tenant,)).fetchone()
+            if row is None:
+                tokens, last = float(capacity), now
+            else:
+                tokens = min(float(capacity),
+                             row["tokens"] + (now - row["updated_at"]) * refill_per_second)
+                last = now
+            allowed = tokens >= 1.0
+            if allowed:
+                tokens -= 1.0
+            db.execute("INSERT OR REPLACE INTO buckets (tenant_id, tokens, updated_at)"
+                       " VALUES (?,?,?)", (tenant, tokens, last))
+            return allowed
+
+    def consume_render_minutes(self, tenant, minutes, limit, period=None):
+        """The quota that costs money, unlike submissions per minute (§16.1)."""
+        period = period or time.strftime("%Y-%m")
+        with self.tx() as db:
+            row = db.execute("SELECT render_minutes FROM usage WHERE tenant_id=? AND period=?",
+                             (tenant, period)).fetchone()
+            used = row["render_minutes"] if row else 0.0
+            if used + minutes > limit:
+                return False, used
+            db.execute("INSERT OR REPLACE INTO usage (tenant_id, period, render_minutes)"
+                       " VALUES (?,?,?)", (tenant, period, used + minutes))
+            return True, used + minutes
+
     # ------------------------------------------------------------- delivery
     def add_endpoint(self, tenant, url, secret):
         endpoint_id = f"wh_{uuid.uuid4().hex[:8]}"
@@ -254,6 +339,12 @@ class Store:
             "SELECT * FROM deliveries WHERE state='pending' AND next_attempt_at<=?"
             " ORDER BY created_at", (now,)).fetchall()
         return [dict(r) for r in rows]
+
+    def delivery_delivered(self, delivery_id):
+        with self.tx() as db:
+            db.execute("UPDATE deliveries SET state='delivered', attempts=attempts+1"
+                       " WHERE id=?", (delivery_id,))
+        return self.delivery(delivery_id)
 
     def delivery(self, delivery_id):
         row = self.db.execute("SELECT * FROM deliveries WHERE id=?",

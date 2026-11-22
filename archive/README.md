@@ -18,5 +18,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v2.1.docx` | v2.1 | Eleventh technical review — a job service, the repair loop, the compiler's own fixtures rendered |
 | `AI_Video_Editor_Architecture_v2.2.docx` | v2.2 | Twelfth technical review — a durable store and worker, content-sensitive fixtures, the repair band |
 | `AI_Video_Editor_Architecture_v2.3.docx` | v2.3 | Thirteenth technical review — retry by class and quarantine, an acrossfade to the sample, one state machine |
+| `AI_Video_Editor_Architecture_v2.4.docx` | v2.4 | Fourteenth technical review — fairness across tenants, backoff with jitter, the DDL fixed and checked |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

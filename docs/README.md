@@ -6,8 +6,8 @@ Every document in this repository, what question it answers, and when to read it
 
 | Document | Answers | Read when |
 |---|---|---|
-| [`spec/AI_Video_Editor_Architecture_v2.3.docx`](spec/AI_Video_Editor_Architecture_v2.3.docx) | The whole design, as the artefact of record | You are reviewing or building against it |
-| [`spec/v2.3.md`](spec/v2.3.md) | The source the document is built from, so it is diffable | You want to read it on GitHub or comment on a line |
+| [`spec/AI_Video_Editor_Architecture_v2.4.docx`](spec/AI_Video_Editor_Architecture_v2.4.docx) | The whole design, as the artefact of record | You are reviewing or building against it |
+| [`spec/v2.4.md`](spec/v2.4.md) | The source the document is built from, so it is diffable | You want to read it on GitHub or comment on a line |
 | [`spec/figures/`](spec/figures) | The three diagrams, extracted from the document | You are placing the spec in a deck or a wiki |
 
 From v1.4 the markdown is the source and the `.docx` is built from it by `build/build_docx.py`. Edit the markdown, rebuild the document, and never edit the `.docx` by hand — the next build overwrites it.
@@ -27,7 +27,7 @@ The distinction that matters: the specification describes the engine's **interna
 
 | Document | Answers | Read when |
 |---|---|---|
-| [`reviews/v2.4-candidates.md`](reviews/v2.4-candidates.md) | What is still wrong, with severity and a proposed fix | You are planning v2.4, or deciding how much to trust a section |
+| [`reviews/v2.5-candidates.md`](reviews/v2.5-candidates.md) | What is still wrong, with severity and a proposed fix | You are planning v2.5, or deciding how much to trust a section |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | What each version changed, and which finding it answered | You want to know why something is the way it is |
 | [`../archive/`](../archive) | The superseded versions, unedited | A claim was withdrawn and you want to see it as written |
 | [`worklog.md`](worklog.md) | How this repository was assembled, step by step | You are taking over the repository |
@@ -41,13 +41,13 @@ Open findings are deliberately kept **out** of the specification. A spec that li
 | `build/check_figures.py` | Recomputes 85 of the spec's figures from first principles and fails on any drift | Before every commit that touches a number |
 | `build/check_consistency.py` | Version strings, enum drift, count agreement, requirement IDs, table/listing/figure numbering, dead references | Before every commit |
 | `build/check_sql.py` | Parses the migration and asserts the tenant keys and RLS coverage of every table |
-| `build/build_docx.py` | Builds the `.docx` from `spec/v2.3.md` in the house style, byte-reproducibly
-| `tests/` | Reference implementations of the rules, the compiler, the planner, the repair loop, the identity machine, the export, a job service and a durable worker — 165 tests including frame hashes, an acrossfade measured to the sample, and a rendered page | | After any markdown change |
+| `build/build_docx.py` | Builds the `.docx` from `spec/v2.4.md` in the house style, byte-reproducibly
+| `tests/` | Reference implementations of the rules, the compiler, the planner, the repair loop, the identity machine, the export, a job service and a durable worker — 174 tests including fairness across tenants, backoff with jitter, and a rendered page | | After any markdown change |
 | `build/extract_spec.py` | Recovers markdown from a `.docx`, for round-trip verification and for the archived versions | After a build, to prove the document matches its source |
 
 ## Reading order by role
 
-**Reviewing the design.** README, then §1 and §4 of the spec, then `engine/01-platform-map.md`, then §5 and §6. Stop and read `reviews/v2.4-candidates.md` before you form a verdict — the largest open defect is in the time model, not in the architecture.
+**Reviewing the design.** README, then §1 and §4 of the spec, then `engine/01-platform-map.md`, then §5 and §6. Stop and read `reviews/v2.5-candidates.md` before you form a verdict — the largest open defect is in the time model, not in the architecture.
 
 **Building the compiler.** §5, §6, Appendix A, then `build/check_figures.py` to see which arithmetic is already pinned. The conform map is in §5.9 and its VFR half is proved in §5.9.4; the open question there is finding 2 of `reviews/v1.6-candidates.md` — how a table-backed map is walked under speed.
 

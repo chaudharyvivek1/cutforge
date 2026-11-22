@@ -30,6 +30,17 @@ Stated because a platform composes engines, and a boundary that is not written d
 - **It does not own tenancy, identity or billing.** It enforces tenant isolation inside its own data layer — that is a security requirement, not a product one — but the tenant registry, plans and quotas live in the platform.
 - **It does not decide what the edit should be.** The planner proposes, the compiler validates, the user corrects. The engine never silently substitutes.
 
+## Repository documents
+
+| Document | Answers |
+|---|---|
+| [`RELEASES.md`](RELEASES.md) | Every version, its date, its basis, and what a release means here |
+| [`docs/repo/description.md`](docs/repo/description.md) | The repository's own description, topics, scope and the five claims worth checking |
+| [`LICENSE`](LICENSE) | Terms — all rights reserved |
+| [`CHANGELOG.md`](CHANGELOG.md) | What each version changed and why |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How a version is cut |
+| [`docs/README.md`](docs/README.md) | The documentation index |
+
 ## Repository map
 
 ```
@@ -38,15 +49,15 @@ docs/
   README.md                                  index: every document and who should read it
   worklog.md                                 how the repo was built, step by step, and what is open
   spec/
-    AI_Video_Editor_Architecture_v2.3.docx   canonical artefact of record
-    v2.3.md                                  source of record, from which the .docx is built
+    AI_Video_Editor_Architecture_v2.4.docx   canonical artefact of record
+    v2.4.md                                  source of record, from which the .docx is built
     figures/                                 figures extracted from the document
   engine/
     01-platform-map.md                       where this engine sits, and what it talks to
     02-engine-contract.md                    the interface the platform may depend on
   reviews/
-    v2.4-candidates.md                       open findings the next version must close
-archive/                                     v1.0 through v2.2, superseded
+    v2.5-candidates.md                       open findings the next version must close
+archive/                                     v1.0 through v2.3, superseded
 build/
   build_docx.py                              markdown → styled .docx, house style
   extract_spec.py                            docx → markdown, for round-trip verification
@@ -63,7 +74,7 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 
 **Two hours, to review the design.** §5 (time and frame model), §6 (the IR) and §11 (the render engine). Those three sections carry almost all the risk. If the time model is wrong, every downstream section inherits the error.
 
-**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v2.4-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
+**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v2.5-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
 
 ## Version history
 
@@ -83,7 +94,8 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 | v2.1 | Eleventh technical review | The engine runs: a job service with a hold and a cancellation, the repair loop, and the compiler's own fixtures rendered |
 | v2.2 | Twelfth technical review | The engine survives: a job that outlives its worker, a repair band closed by a real shortfall, and a corpus contract |
 | v2.3 | Thirteenth technical review | The engine stops: a poison job quarantined, an acrossfade measured to the sample, and one state machine instead of two |
-| v2.4 | *Not started* | The six open findings in `docs/reviews/v2.4-candidates.md` — the schema has not caught up with the quarantine state |
+| v2.4 | Fourteenth technical review | The queue behaves: fairness across tenants, backoff with jitter, and a schema that matches the code |
+| v2.5 | *Not started* | The six open findings in `docs/reviews/v2.5-candidates.md` — the first is a security defect |
 
 Each version is a full standalone specification, not a patch. A reader should be able to open any one of them and understand the whole system.
 

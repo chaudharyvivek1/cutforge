@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.4 — 22 November 2026
+
+**Basis:** fourteenth technical review, plus a full audit of the code and the tests.
+**Theme:** the queue behaves. Many workers without starvation, retries that back off instead of stampeding, and a schema that finally knows the state the code writes.
+
+| Finding | Resolved by |
+|---|---|
+| No scheduler, concurrency or fairness | `claim()` caps a tenant at two running jobs; several workers drain a queue without double-claiming |
+| No backoff or jitter | `retry_after` with exponential delay and a per-job jitter; claims respect the due time |
+| `quarantined` missing from the state CHECK | Added, and `check_sql.py` now compares the DDL against the states the code sets |
+| The acrossfade asserted length, not content | The decoded audio is hashed and pinned beside the count |
+| Overlays scheduled for a second version | Withdrawn: §11.7 states v1 overlays are text only, and §21 drops the item |
+| A synthetic corpus could be mistaken for a measurement | The fixture declares itself and `load()` refuses it without `synthetic=True` |
+
+**The audit that preceded it** found seven more defects, all fixed: a duplicate function definition that silently shadowed the first; an orphan requeue with a zero lease that would let two workers render the same job; a test that asserted `"frame="` appeared on stderr and therefore could not fail; a `render_raw` that returned a hash where a caller needed bytes; four unused imports and parameters; a dead `expired` state with no path to it; and an ordinal map keyed on the minor digit, which called v2.4 the fourth review instead of the fourteenth.
+
+**Still open after v2.4:** six findings, in `docs/reviews/v2.5-candidates.md`. The first is a security defect: the service trusts a tenant header.
+
+---
+
 ## v2.3 — 22 November 2026
 
 **Basis:** thirteenth technical review.

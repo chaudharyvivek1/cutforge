@@ -1,0 +1,24 @@
+Copyright (c) 2026 Vivek Chaudhary. All rights reserved.
+
+This repository contains a technical design specification and its reference
+implementation, including the text, the diagrams, the generated documents in
+`docs/spec/`, the archived versions in `archive/`, and the code in `tests/`
+and `build/`.
+
+No licence is granted to copy, modify, distribute, sublicense or use this
+material, in whole or in part, without the prior written permission of the
+copyright holder. Reading it on a public hosting service does not grant any
+such permission.
+
+THE MATERIAL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE MATERIAL OR THE USE OR OTHER DEALINGS IN THE MATERIAL.
+
+--------------------------------------------------------------------------------
+If this repository is meant to be reusable rather than published for reading,
+the customary choice is MIT (permissive) or Apache-2.0 (permissive, with an
+express patent grant). Replacing this file is the whole change; the README's
+Status section would need the same sentence updated.

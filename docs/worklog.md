@@ -24,7 +24,8 @@ Each version is a full standalone specification answering one external technical
 | v2.1 | Eleventh technical review | "The engine must run, not just compile" | A job service (§15, §17, §18), the repair loop (§7.4), the compiler's own fixtures rendered (§19.1), accuracy and colour harnesses (§8.6, §11.4), and §11.7 narrowed to what is built |
 | v2.2 | Twelfth technical review | "The engine must survive a restart" | A durable store and worker (§18), content-sensitive render fixtures (§19.1), the repair band closed (§7.7), a corpus contract (§8.6), a perceptual fallback (§11.8), and overlays scheduled (§21) |
 | v2.3 | Thirteenth technical review | "The engine must stop cleanly" | Retry by class and quarantine (§18), acrossfade measured to the sample (§11.5), a corpus pipeline that runs (§8.6), a recorded fingerprint (§11.8), and the duplicate state machine deleted (§15) |
-| v2.4 | *Not started* | — | The six open findings in `docs/reviews/v2.4-candidates.md` — the schema has not caught up with the quarantine state |
+| v2.4 | Fourteenth technical review | "The queue must behave" | Fairness across tenants (§17), backoff with jitter (§18), the DDL state fixed and checked (§13.3), the acrossfade content pinned (§11.5), overlays withdrawn (§11.7), the synthetic corpus guarded (§8.6) |
+| v2.5 | *Not started* | — | The six open findings in `docs/reviews/v2.5-candidates.md` — the first is a security defect |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -275,6 +276,28 @@ v2.3 is the first version whose main change was a deletion. `service.JobStore` a
 
 **What the crossfade proved.** Two clips, a 12-frame dissolve, 588 frames: the decoded audio is 941,741 samples, which is `samplesFor(588)` exactly. §5.7's handle rule and §11.5's acceptance test met in one fixture for the first time — and it is the only fixture where either can be wrong in a way a hash would miss.
 
+## 2l. The v2.4 round, and the audit before it
+
+v2.4 was preceded by a full audit of the code and the tests, which found seven defects that no version's review had caught. Six were small. One would have cost a render.
+
+| # | Commit | What it did |
+|---|---|---|
+| 94 | `fix: seven defects from the audit` | Duplicate function, zero-lease requeue, a vacuous test, a hash where bytes were needed, dead imports, a dead state, a mis-keyed ordinal map |
+| 95 | `feat(store): fairness, backoff and a lease` | Per-tenant cap, exponential delay with per-job jitter, 30-second lease |
+| 96 | `fix(spec): the DDL learns the quarantined state` | And `check_sql.py` compares it against the code |
+| 97 | `docs: licence, releases, and the repository's own description` | Three documents the repository was missing |
+| 98 | `docs(spec): add the v2.4 source` | 15 anchored edits |
+| 99 | `docs(spec): build v2.4 and archive v2.3` | 61 pages, 174 tests |
+| 100 | `docs: release notes for v2.4` | Changelog, version line, this section |
+
+**The audit found what review does not.** `pyflakes` reported eight things and seven were real, including a second definition of `_fps` in the planner that silently shadowed the first — the same function, written twice, which is the repository's recurring defect in miniature. The one that mattered most was `requeue_orphans(older_than=0.0)`: the default requeued *every* running job on every sweep, including one a live worker was rendering, so two workers could write the same output. The fix is a 30-second lease, and the test that would have caught it now exists.
+
+**And a test that could not fail.** `test_the_graph_and_the_pixels_agree_on_length` asserted that `"frame="` appeared in ffmpeg's stderr — true of every run, including a broken one. It now counts frames from the decoded bytes, and asserts that a dissolve costs its overlap: 48 frames for two 24-frame clips, 36 with a 12-frame fade.
+
+**The schema drift arrived on schedule.** v2.3 added `quarantined` to the store and not to §13.3's CHECK, so a real Postgres would reject the update. That is exactly what v1.3's §0 accused v1.2 of, and the fix is a checker rather than a resolution: `build/check_sql.py` now compares the DDL's state list against `store.TERMINAL`, so the next drift fails the build. The dead `expired` state was removed from the code rather than added to the schema — a state with no path to it is not a state.
+
+**Three documents the repository lacked.** `LICENSE` (all rights reserved, with a note on how to switch to MIT or Apache-2.0), `RELEASES.md` (every version, its basis, and what a release means when there is no binary), and `docs/repo/description.md` (the description, topics, scope and the five claims worth checking — kept in the repository because metadata in a web form is metadata nobody reviews).
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -295,14 +318,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| No scheduler: one worker, no concurrency, no fairness | `reviews/v2.4-candidates.md` §1 | Starvation, p95 latency, a fleet of GPUs |
-| The retry policy has no backoff and no jitter | §2 | A thundering herd against a recovering dependency |
-| `quarantined` is missing from the job state CHECK | §3 | Any real Postgres deployment |
-| The acrossfade fixture asserts length and not content | §4 | A fade at the wrong offset |
-| Overlays remain scheduled and unbuilt | §5 | Designed titles, for a second version |
-| The synthetic corpus could be mistaken for a measurement | §6 | Any accuracy figure quoted from it |
+| The service trusts a tenant header | `reviews/v2.5-candidates.md` §1 | Every isolation claim — a client can name its own tenant |
+| No metrics: §17's signals are never emitted | §2 | p95 latency, first-attempt success, oldest job age |
+| Webhooks are specified and not implemented | §3 | Any event delivery, and the signature scheme |
+| Every render in CI is CPU | §4 | The NVENC capacity model |
+| The model path has no reference implementation | §5 | The 80% first-attempt target |
+| The identity corpus has no real data | §6 | Any accuracy claim |
 
-Nothing in that list is architectural. Two are consequences of v2.3's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Two are consequences of v2.4's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

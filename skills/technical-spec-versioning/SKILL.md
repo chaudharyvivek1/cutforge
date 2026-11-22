@@ -84,6 +84,27 @@ A version is done when all of these hold:
 - Nothing is claimed as measured that was not measured; use an evidence-status column instead of confident prose.
 - Withdrawn claims are withdrawn in the text, not silently deleted — a reader who saw v1.2 needs to know that v1.3 no longer promises it.
 
+
+## The version cadence, in one screen
+
+Nineteen versions of one specification produced this order, and every step earned its place by catching something:
+
+1. Read the previous version's open list — it is the only honest statement of what is wrong.
+2. **Audit before editing**: static analysis, duplicate definitions, stale counts, tests that cannot fail. One audit found seven defects across four versions that no review had seen.
+3. Write the findings table **first**; prose exists to satisfy it.
+4. Apply edits with **asserted anchors** — every replacement asserts it matched exactly once, so a silent no-op fails the build.
+5. Compute every figure in a checker and compare to the prose.
+6. Renumber, then verify cross-references and requirement IDs.
+7. Build the artefact from the source, then **extract it back** and re-run every check on the extracted text.
+8. **Render the artefact and look at it** — split rows and collapsed builds are invisible to text checks.
+9. Write the next version's open list before this one ships.
+
+See `references/version-cadence.md` for the proportion of defect classes across nineteen versions, the rules that held, the anti-patterns with their cost, and sizing. `scripts/audit.py` runs step 2 against any repository.
+
+## The one finding worth carrying to every project
+
+Across nineteen versions, **every defect was found by executing something** — a checker, a test, a render, a round trip. Not one was found by reading the document carefully. A version that specifies a new layer and does not execute it in the same version is a version that has scheduled its own next finding.
+
 ## Pitfalls that have actually bitten
 
 - **Fixing a number in one section and leaving its consequence in another.** Correct the frame size, then recheck the bandwidth, the stream count and the cost per minute.

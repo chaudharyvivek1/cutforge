@@ -27,5 +27,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v2.10.docx` | v2.10 | Twentieth technical review — closed-GOP segments, provider adapter, segment expiry |
 | `AI_Video_Editor_Architecture_v2.11.docx` | v2.11 | Twenty-first technical review — the model seam, a usable-encoder probe, retention policy |
 | `AI_Video_Editor_Architecture_v2.12.docx` | v2.12 | Twenty-second technical review — the rubric, a bounded hook, a worker loop, a split suite |
+| `AI_Video_Editor_Architecture_v2.13.docx` | v2.13 | Twenty-third technical review — the rubric calibrated, quality repair |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

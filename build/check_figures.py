@@ -8,7 +8,7 @@ derived value against the value printed in the document. A figure that
 stops being true fails the build instead of aging quietly.
 
 Usage:
-    python build/check_figures.py [docs/spec/v1.4.md]
+    python build/check_figures.py [<spec.md>]
 """
 import math
 import re
@@ -23,6 +23,21 @@ def round_half_away(x):
     x = F(x)
     sign = -1 if x < 0 else 1
     return sign * math.floor(abs(x) + F(1, 2))
+
+
+def newest_spec():
+    """The current specification, found rather than hardcoded.
+
+    A hardcoded default goes stale the moment a version is archived, and a
+    default that is never exercised because every call passes an argument is
+    a default nobody notices is wrong. This one is checked by
+    check_consistency.py, which fails if any script points at a missing file.
+    """
+    candidates = sorted(Path("docs/spec").glob("v*.md"),
+                        key=lambda p: [int(x) for x in p.stem.lstrip("v").split(".")])
+    if not candidates:
+        raise SystemExit("no specification found in docs/spec")
+    return candidates[-1]
 
 
 FAILURES = []
@@ -58,7 +73,7 @@ FPS_25 = F(25, 1)
 
 
 def main():
-    md_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("docs/spec/v1.4.md")
+    md_path = Path(sys.argv[1]) if len(sys.argv) > 1 else newest_spec()
     md = md_path.read_text(encoding="utf-8") if md_path.exists() else ""
 
     # ---------------------------------------------------------- 5.5  audio

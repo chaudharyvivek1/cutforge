@@ -88,8 +88,8 @@ Nothing here is legal advice. §16 covers biometric processing, consent and eras
 ## Building and checking
 
 ```bash
-python build/check_figures.py docs/spec/v1.5.md     # recompute every asserted figure
-python build/check_consistency.py docs/spec/v1.5.md # versions, enums, counts, numbering
+python build/check_figures.py        # recompute every asserted figure
+python build/check_consistency.py    # versions, enums, counts, numbering
 python build/build_docx.py docs/spec/v1.5.md \
     docs/spec/AI_Video_Editor_Architecture_v1.5.docx docs/spec   # build the document
 ```

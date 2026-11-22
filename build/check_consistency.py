@@ -9,11 +9,26 @@ that the table below it contradicts, numbering that skips or repeats.
 Every check here exists because that defect has actually occurred.
 
 Usage:
-    python build/check_consistency.py [docs/spec/v1.4.md]
+    python build/check_consistency.py [<spec.md>]
 """
 import re
 import sys
 from pathlib import Path
+
+def newest_spec():
+    """The current specification, found rather than hardcoded.
+
+    A hardcoded default goes stale the moment a version is archived, and a
+    default that is never exercised because every call passes an argument is
+    a default nobody notices is wrong. This one is checked by
+    check_consistency.py, which fails if any script points at a missing file.
+    """
+    candidates = sorted(Path("docs/spec").glob("v*.md"),
+                        key=lambda p: [int(x) for x in p.stem.lstrip("v").split(".")])
+    if not candidates:
+        raise SystemExit("no specification found in docs/spec")
+    return candidates[-1]
+
 
 FAILURES = []
 
@@ -27,7 +42,7 @@ def is_separator(line):
 
 
 def main():
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("docs/spec/v1.4.md")
+    path = Path(sys.argv[1]) if len(sys.argv) > 1 else newest_spec()
     text = path.read_text(encoding="utf-8")
     lines = text.split("\n")
     repo = path.resolve().parent.parent.parent

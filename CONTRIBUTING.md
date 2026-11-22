@@ -7,8 +7,10 @@ The specification is the product. Everything here exists to keep it correct, rev
 **A number in the document is either computed or labelled an assumption.** No figure is typed twice. If you change a number, change `build/check_figures.py` in the same commit, or the check will fail — which is the point.
 
 ```bash
-python build/check_figures.py docs/spec/v1.5.md       # the arithmetic
-python build/check_consistency.py docs/spec/v1.5.md  # everything that is not arithmetic
+python build/check_figures.py        # the arithmetic
+python build/check_consistency.py    # everything that is not arithmetic
+
+Both find the current specification in `docs/spec/` rather than naming a version, so they do not go stale when one is archived.
 ```
 
 Run both before every commit. Together they take under a second, and between them they have caught six real defects: a rounding rule that disagreed with Python's `round()`, a fleet-size calculation that used truncated stream counts, a speed schema that contradicted the wire format, three overlapping determinism rows, a finding count that disagreed with its own table, a requirement table with two FR-15 rows, and a claim in v1.5's own prose that a VFR conform map is non-decreasing when the worked example is strictly increasing.

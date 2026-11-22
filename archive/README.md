@@ -15,5 +15,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v1.8.docx` | v1.8 | Eighth technical review — five golden graphs, a byte-reproducible build, a round-trip and a rendered-page check |
 | `AI_Video_Editor_Architecture_v1.9.docx` | v1.9 | Ninth technical review — LUTs, colour in both directions, a mixed audio bus, golden provenance |
 | `AI_Video_Editor_Architecture_v2.0.docx` | v2.0 | Tenth technical review — the first version that produces frames; renderer, planner, identity machine, OTIO round trip |
+| `AI_Video_Editor_Architecture_v2.1.docx` | v2.1 | Eleventh technical review — a job service, the repair loop, the compiler's own fixtures rendered |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

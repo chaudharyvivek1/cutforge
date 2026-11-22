@@ -22,5 +22,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v2.5.docx` | v2.5 | Fifteenth technical review — authorisation from a token, Prometheus metrics, signed webhooks |
 | `AI_Video_Editor_Architecture_v2.6.docx` | v2.6 | Sixteenth technical review — credential lifecycle, rate limits, delivery retry |
 | `AI_Video_Editor_Architecture_v2.7.docx` | v2.7 | Seventeenth technical review — the dispatcher posts, shared revocation and buckets |
+| `AI_Video_Editor_Architecture_v2.8.docx` | v2.8 | Eighteenth technical review — asset tables and ingest, the conform map produced, shots detected |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

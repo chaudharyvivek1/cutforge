@@ -27,7 +27,8 @@ Each version is a full standalone specification answering one external technical
 | v2.4 | Fourteenth technical review | "The queue must behave" | Fairness across tenants (§17), backoff with jitter (§18), the DDL state fixed and checked (§13.3), the acrossfade content pinned (§11.5), overlays withdrawn (§11.7), the synthetic corpus guarded (§8.6) |
 | v2.5 | Fifteenth technical review | "The surface must be defended" | Authorisation from a token (§14.5), Prometheus metrics (§17), signed webhooks (§15.3), a GPU benchmark workflow (§12.9), a plan corpus (§7.1) |
 | v2.6 | Sixteenth technical review | "The credential must have a life" | Expiry, rotation and revocation (§14.5), a per-tenant rate limit (§15.1), a worker heartbeat gauge (§17), delivery with retry and dead-letter (§15.3), the benchmark workflow made manual |
-| v2.7 | *Not started* | — | The six open findings in `docs/reviews/v2.7-candidates.md` — nothing sends a webhook yet |
+| v2.7 | Seventeenth technical review | "State must be shared" | The dispatcher posts (§15.3), tokens and revocations in the store (§16), shared buckets, render-minute quotas (§16.1), and `ROADMAP.md` |
+| v2.8 | *Not started* | — | The six open findings in `docs/reviews/v2.8-candidates.md` — the engine has no assets |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -340,6 +341,24 @@ v2.6 gave the credential a life, the queue a limit, and delivery a sender — th
 
 **What is still not true.** Delivery retries and dead-letters, and nothing posts. `pending_deliveries()` returns rows and no loop consumes them, so §15.3's at-least-once promise is at-least-once *bookkeeping*. That is finding 1 of the v2.7 list, and it is the third version in which delivery has been nearly finished.
 
+## 2o. The v2.7 round
+
+v2.7 moved three pieces of state out of a process and into the store, and made the webhook promise true on the third attempt at it.
+
+| # | Commit | What it did |
+|---|---|---|
+| 113 | `feat(dispatcher): post the signed body` | Drains, signs, posts, records; a receiver that fails twice still gets the event |
+| 114 | `feat(store): tokens, revocations, buckets and usage` | Shared state, so a limit is a limit and a revocation revokes |
+| 115 | `feat(auth): issuance and revocation through the store` | A token issued in one process is visible in another |
+| 116 | `docs(spec): add the v2.7 source` | 13 anchored edits |
+| 117 | `docs: roadmap and release notes` | The first document that answers "how long" |
+
+**Two findings were the same mistake twice.** Revocation was a set in memory and the rate limiter was a dictionary, so a revoked token worked everywhere except where it was revoked and the effective rate limit was capacity × workers. Both are now rows in the store. That is the repository's recurring defect — state in the wrong place — in its fourth distinct form.
+
+**Delivery took three versions.** v2.5 signed it, v2.6 emitted and retried it, v2.7 posts it. Each version's §0 said the promise was kept and each was honest that it was not quite; the difference this time is a test that runs over a real socket against a receiver that fails twice and then accepts, and verifies the signature on every attempt.
+
+**And the roadmap is the useful artefact.** `ROADMAP.md` states where the project stands, what is missing by area, a version list with effort ranges, the critical path, and the five decisions that are blocked on the owner rather than on work. It is the first document here that a person can use to plan, and it is written in the same voice as the rest: the estimates are ranges because the thing that has gone wrong every time is the layer nobody had executed.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -360,14 +379,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| Nothing sends a delivery; the dispatcher does not exist | `reviews/v2.7-candidates.md` §1 | At-least-once delivery — the rows are written and nothing posts them |
-| Quotas cover submissions, not storage or render minutes | §2 | The two quotas that cost money |
-| Revocation is per-process and per-restart | §3 | Any revocation — the set is in memory |
-| The rate limiter has no shared state | §4 | Two workers behind a load balancer each allow a full burst |
-| Three GPU signals remain unemitted | §5 | GPU memory, encoder utilisation, success rate by kind |
-| The identity corpus has no real data | §6 | Any accuracy claim |
+| There is no asset table and no ingest pipeline | `reviews/v2.8-candidates.md` §1 | Everything downstream — rendering, analysis, storage, evaluation |
+| Storage quota is unenforceable without assets | §2 | The other half of §16.1 |
+| Analysis is entirely unimplemented | §3 | The planner has never seen a real transcript |
+| Three GPU signals remain unemitted | §4 | GPU memory, encoder utilisation, success rate |
+| Webhook ordering is not guaranteed and not stated | §5 | A receiver that assumes order |
+| The usage period has no rollover test | §6 | A quota that never resets |
 
-Nothing in that list is architectural. Two are consequences of v2.6's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Two are consequences of v2.7's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

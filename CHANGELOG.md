@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.7 — 22 November 2026
+
+**Basis:** seventeenth technical review.
+**Theme:** state is shared. A token issued in one process is visible in another, a bucket is one row rather than one dictionary, and a webhook is finally posted.
+
+| Finding | Resolved by |
+|---|---|
+| Nothing sent a delivery | `dispatcher.Dispatcher` — drains, signs, posts, records; tested over a socket against a receiver that fails twice |
+| Quotas covered submissions, not cost | `consume_render_minutes()` — a monthly limit that refuses without consuming; stored bytes deferred with a note |
+| Revocation was per-process | `revocations` and `tokens` tables, consulted per request; survives a restart |
+| The rate limiter had no shared state | `take_token()` — one row per tenant, refilled on read |
+| Three GPU signals unemitted | Unchanged and stated: no GPU runner, and a constant would be worse than an absence |
+| Identity corpus has no data | Unchanged: procurement |
+
+Also added: `ROADMAP.md`, which turns the open list into an order of work with effort ranges — the first document in this repository that answers "how long".
+
+**Still open after v2.7:** six findings, in `docs/reviews/v2.8-candidates.md`. The first is that the engine has no assets at all.
+
+---
+
 ## v2.6 — 22 November 2026
 
 **Basis:** sixteenth technical review.

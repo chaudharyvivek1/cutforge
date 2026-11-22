@@ -34,6 +34,7 @@ Stated because a platform composes engines, and a boundary that is not written d
 
 | Document | Answers |
 |---|---|
+| [`ROADMAP.md`](ROADMAP.md) | Where the project stands, what is left, and how long the remainder plausibly takes |
 | [`RELEASES.md`](RELEASES.md) | Every version, its date, its basis, and what a release means here |
 | [`docs/repo/description.md`](docs/repo/description.md) | The repository's own description, topics, scope and the five claims worth checking |
 | [`docs/repo/ABOUT.md`](docs/repo/ABOUT.md) | Paste-ready About panel text — the field cannot be set by a commit |
@@ -50,15 +51,15 @@ docs/
   README.md                                  index: every document and who should read it
   worklog.md                                 how the repo was built, step by step, and what is open
   spec/
-    AI_Video_Editor_Architecture_v2.6.docx   canonical artefact of record
-    v2.6.md                                  source of record, from which the .docx is built
+    AI_Video_Editor_Architecture_v2.7.docx   canonical artefact of record
+    v2.7.md                                  source of record, from which the .docx is built
     figures/                                 figures extracted from the document
   engine/
     01-platform-map.md                       where this engine sits, and what it talks to
     02-engine-contract.md                    the interface the platform may depend on
   reviews/
-    v2.7-candidates.md                       open findings the next version must close
-archive/                                     v1.0 through v2.5, superseded
+    v2.8-candidates.md                       open findings the next version must close
+archive/                                     v1.0 through v2.6, superseded
 build/
   build_docx.py                              markdown → styled .docx, house style
   extract_spec.py                            docx → markdown, for round-trip verification
@@ -75,7 +76,7 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 
 **Two hours, to review the design.** §5 (time and frame model), §6 (the IR) and §11 (the render engine). Those three sections carry almost all the risk. If the time model is wrong, every downstream section inherits the error.
 
-**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v2.7-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
+**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v2.8-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
 
 ## Version history
 
@@ -98,7 +99,8 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 | v2.4 | Fourteenth technical review | The queue behaves: fairness across tenants, backoff with jitter, and a schema that matches the code |
 | v2.5 | Fifteenth technical review | The surface is defended: authorisation from a token, Prometheus metrics, and signed webhooks |
 | v2.6 | Sixteenth technical review | The credential has a life: expiry, rotation, revocation, rate limits and delivery retry |
-| v2.7 | *Not started* | The six open findings in `docs/reviews/v2.7-candidates.md` — nothing sends a webhook yet |
+| v2.7 | Seventeenth technical review | State is shared: the dispatcher posts, revocation and buckets live in the store |
+| v2.8 | *Not started* | The six open findings in `docs/reviews/v2.8-candidates.md` — the engine has no assets |
 
 Each version is a full standalone specification, not a patch. A reader should be able to open any one of them and understand the whole system.
 

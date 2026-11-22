@@ -8,7 +8,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 
 | Version | Date | Document | Tests | Figures |
 |---|---|---|---|---|
-| **v2.6** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.6.docx`](docs/spec/AI_Video_Editor_Architecture_v2.6.docx) | 218 | 91 |
+| **v2.7** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.7.docx`](docs/spec/AI_Video_Editor_Architecture_v2.7.docx) | 231 | 91 |
 
 ## The line
 
@@ -31,6 +31,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 | v2.4 | 22 Nov 2026 | Fourteenth review | The queue behaves: fairness across tenants, backoff with jitter, and a schema that matches the code |
 | v2.5 | 22 Nov 2026 | Fifteenth review | The surface is defended: authorisation from a token, metrics, and signed webhooks |
 | v2.6 | 22 Nov 2026 | Sixteenth review | The credential has a life: expiry, rotation, revocation, rate limits and delivery retry |
+| v2.7 | 22 Nov 2026 | Seventeenth review | State is shared: the dispatcher posts, revocation and buckets live in the store |
 
 ## What "release" means here
 

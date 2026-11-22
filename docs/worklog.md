@@ -35,7 +35,8 @@ Each version is a full standalone specification answering one external technical
 | v2.12 | Twenty-second technical review | "Quality must be a number" | The rubric (§19.2), a bounded hook (§7.2), the worker loop (§18), a split suite |
 | v2.13 | Twenty-third technical review | "The rubric must be checked too" | Calibration against labels (§19.2), quality repair (§7.5), boundary arithmetic |
 | v2.14 | Twenty-fourth technical review | "The set must disagree" | Twenty labelled plans (§19.2), the quality gate in the service (§7.5), a maximum cut rate |
-| v2.15 | *Not started* | — | The six open findings in `docs/reviews/v2.15-candidates.md` — the list recommends buying rather than building |
+| v2.15 | Twenty-fifth technical review | "Write the expectations first" | Blind labelling (§19.2), one shared rule for hook and cuts, a gate that refuses (§7.5) |
+| v2.16 | *Not started* | — | The six open findings in `docs/reviews/v2.16-candidates.md` — four purchases, one person, one tension |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -487,6 +488,22 @@ v2.14 is the first version whose headline result is a disagreement, and that is 
 
 **Five versions, four purchases.** The v2.15 list opens with the same four items as v2.12's, which is now the most useful fact in the repository: no further version moves any of them.
 
+## 2w. The v2.15 round
+
+v2.15 wrote the expectations down before the plan existed, and the second judge that produced disagreed with the first on seven of twenty plans.
+
+| # | Commit | What it did |
+|---|---|---|
+| 147 | `feat: blind labelling and a gate that refuses` | Expectations from the request; 422 for a plan that cannot be lifted |
+| 148 | `docs(spec): add the v2.15 source` | 11 anchored edits |
+| 149 | `docs: release notes for v2.15` | Changelog, version line, this section |
+
+**Every disagreement was one rule written twice.** The judge had its own 3000 ms hook cap and rejected the planner's 90-frame hook by three milliseconds — 90 frames at 29.97 is 3003 ms. It had its own cut floor, which rejected slow films the rubric accepts; three of the seven were that class. And it had no hook floor at all, so a two-frame flash passed it. Four corrections, each of the form "read one number from one place".
+
+**And the agreement that resulted is now partly by construction.** That is the tension v2.15 chose and named: two judges with independent rules produced seven disagreements, most of them bugs and one a missing criterion; two judges reading one set of constants agree by definition. Independence belongs in a second person, not in a second copy of a constant, and the finding says so.
+
+**The gate can refuse.** It repaired, reported and queued the job anyway, so an unrepairable plan failed later in the renderer where the error costs more. It now returns 422 with the criterion that would not move, and no job is created.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -507,12 +524,12 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The capacity model is unmeasured | `reviews/v2.15-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
+| The capacity model is unmeasured | `reviews/v2.16-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
 | Three GPU signals remain unemitted | §2 | GPU memory, encoder utilisation, success rate — **a GPU machine** |
 | No model has produced a plan | §3 | The product's premise — **a model budget** |
 | The identity corpus has no data | §4 | Any accuracy claim — **procurement** |
-| The calibration set has one author | §5 | Whether the thresholds survive a second opinion |
-| The quality gate cannot refuse | §6 | A plan that cannot be repaired |
+| The blind judge still has one author | §5 | Whether the rubric's blind spots survive a second person |
+| Two judges agree because they share constants | §6 | Independent validation, as opposed to a regression guard |
 
 Nothing in that list is architectural. Four are gated on a purchase — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 

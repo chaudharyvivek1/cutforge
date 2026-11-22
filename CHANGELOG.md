@@ -6,6 +6,23 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.15 — 22 November 2026
+
+**Basis:** twenty-fifth technical review.
+**Theme:** the expectations are written before the plan — a blind judge, one shared rule, and a gate that can refuse.
+
+| Finding | Resolved by |
+|---|---|
+| The calibration set had one author | `label_from_request()` writes the expectations from the request before a plan exists; `judge()` scores against them |
+| The gate could not refuse | 422 `PLAN_UNREPAIRABLE` naming the criterion that would not move, and no job created |
+| Capacity, GPU signals, model, corpus | Blocked and stated |
+
+Writing the expectations first produced a second judge, which disagreed with the rubric on seven of twenty plans. Every disagreement was one rule written twice — a 3000 ms hook cap that rejected the planner's 90-frame hook by 3 ms, a cut floor that rejected slow films, and no hook floor at all. Four corrections later both judges agree on all twenty.
+
+**Still open after v2.15:** six findings, in `docs/reviews/v2.16-candidates.md`. Four are purchases, one needs a second person, one is a design tension.
+
+---
+
 ## v2.14 — 22 November 2026
 
 **Basis:** twenty-fourth technical review.

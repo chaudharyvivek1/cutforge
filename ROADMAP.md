@@ -59,6 +59,7 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 | **v2.13** | The rubric is checked | Calibration against labels it was not tuned on, quality repair, boundary arithmetic | **Done** | — |
 | **v2.14** | The set disagrees | Twenty labelled plans, a disagreement report, the quality gate in the service | **Done** | — |
 | **v2.15** | Expectations first | Blind labelling, one shared rule, a gate that refuses | **Done** | — |
+| **v2.16** | What a second opinion adds | A shape judge, a coverage measurement, expectation-list comparison | **Done** | — |
 | — | It renders at 4K | The §12.9 matrix measured, benchmarks filled. The code path exists and refuses without a device | 1–2 sessions | **A GPU machine** |
 | v3.0 | P0 complete | A provider adapter behind the seam, the prompt→file path end to end, evaluation corpus, the 80% target measured | 5–8 sessions | **Model budget** — the plumbing and the scoring are done |
 | v3.1 | Faces | Labelled corpus, accuracy measured, the feature enabled behind a flag | 2–3 sessions | **Procurement**, legal review |
@@ -68,7 +69,7 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 
 **Rough total to a system that turns a prompt into a rendered file at 1080p:** ≈ **5–9 sessions**, and every one of them is gated on a purchase rather than on work.
 
-**Twenty-five versions in, the honest statement is that the specification has outrun what this environment can prove.** v2.11 showed the remaining engineering is small; v2.13 and v2.14 showed the remaining checking is small. What is missing is a GPU, a model budget and a corpus, and five consecutive versions have now ended with that same sentence.
+**Twenty-six versions in, the honest statement is that the specification has outrun what this environment can prove.** v2.11 showed the remaining engineering is small; v2.13 and v2.14 showed the remaining checking is small. What is missing is a GPU, a model budget and a corpus, and five consecutive versions have now ended with that same sentence.
 
 **The next session should not be a version.** A GPU quote, a model budget and a corpus contract are each worth more than another review cycle, and the repository is at the useful end of what a specification can do alone.
 

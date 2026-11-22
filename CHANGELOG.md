@@ -6,6 +6,23 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.16 — 22 November 2026
+
+**Basis:** twenty-sixth technical review.
+**Theme:** a second judge measures something the first does not — and the measurement says it adds nothing, which is a result rather than a failure.
+
+| Finding | Resolved by |
+|---|---|
+| The two judges agreed by construction | `distribution.judge()` measures the spread of shot lengths with no threshold anywhere; `coverage()` counts what each judge catches |
+| The blind judge still has one author | `compare_expectation_lists()` diffs two lists field by field — the harness a second author needs, who is still missing |
+| Capacity, GPU signals, model, corpus | Blocked and stated |
+
+On twenty labelled plans the shape judge catches nothing the threshold judge misses and raises no false alarms. A bounded hook makes an evenly divided plan detectable by thresholds too, so the judges are correlated by the product's own rules rather than by shared constants — a more interesting fact than agreement, and only visible by counting coverage instead of agreement.
+
+**Still open after v2.16:** six findings, in `docs/reviews/v2.17-candidates.md`. Seventh version with the same four purchases.
+
+---
+
 ## v2.15 — 22 November 2026
 
 **Basis:** twenty-fifth technical review.

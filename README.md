@@ -51,15 +51,15 @@ docs/
   README.md                                  index: every document and who should read it
   worklog.md                                 how the repo was built, step by step, and what is open
   spec/
-    AI_Video_Editor_Architecture_v2.15.docx  canonical artefact of record
-    v2.15.md                                 source of record, from which the .docx is built
+    AI_Video_Editor_Architecture_v2.16.docx  canonical artefact of record
+    v2.16.md                                 source of record, from which the .docx is built
     figures/                                 figures extracted from the document
   engine/
     01-platform-map.md                       where this engine sits, and what it talks to
     02-engine-contract.md                    the interface the platform may depend on
   reviews/
-    v2.16-candidates.md                      open findings the next version must close
-archive/                                     v1.0 through v2.14, superseded
+    v2.17-candidates.md                      open findings the next version must close
+archive/                                     v1.0 through v2.15, superseded
 build/
   build_docx.py                              markdown → styled .docx, house style
   extract_spec.py                            docx → markdown, for round-trip verification
@@ -76,7 +76,7 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 
 **Two hours, to review the design.** §5 (time and frame model), §6 (the IR) and §11 (the render engine). Those three sections carry almost all the risk. If the time model is wrong, every downstream section inherits the error.
 
-**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v2.16-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
+**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v2.17-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
 
 ## Version history
 
@@ -108,7 +108,8 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 | v2.13 | Twenty-third technical review | The rubric is calibrated against labels it was not tuned on; repair consults quality |
 | v2.14 | Twenty-fourth technical review | A calibration set that disagrees, and a quality gate in the service |
 | v2.15 | Twenty-fifth technical review | A blind judge, one shared rule, and a gate that can refuse |
-| v2.16 | *Not started* | The six open findings in `docs/reviews/v2.16-candidates.md` — four purchases, one person, one tension |
+| v2.16 | Twenty-sixth technical review | A second judge of a different shape, and a coverage measurement |
+| v2.17 | *Not started* | The six open findings in `docs/reviews/v2.17-candidates.md` — seventh version with the same four purchases |
 
 Each version is a full standalone specification, not a patch. A reader should be able to open any one of them and understand the whole system.
 

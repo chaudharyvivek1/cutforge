@@ -8,7 +8,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 
 | Version | Date | Document | Tests | Figures |
 |---|---|---|---|---|
-| **v2.15** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.15.docx`](docs/spec/AI_Video_Editor_Architecture_v2.15.docx) | 347 | 91 |
+| **v2.16** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.16.docx`](docs/spec/AI_Video_Editor_Architecture_v2.16.docx) | 362 | 91 |
 
 ## The line
 
@@ -40,6 +40,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 | v2.13 | 22 Nov 2026 | Twenty-third review | The rubric is calibrated, and repair consults quality |
 | v2.14 | 22 Nov 2026 | Twenty-fourth review | A calibration set that disagrees, and a quality gate in the service |
 | v2.15 | 22 Nov 2026 | Twenty-fifth review | A blind judge, one shared rule, and a gate that can refuse |
+| v2.16 | 22 Nov 2026 | Twenty-sixth review | A second judge of a different shape, and a coverage measurement |
 
 ## What "release" means here
 

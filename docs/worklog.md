@@ -36,7 +36,8 @@ Each version is a full standalone specification answering one external technical
 | v2.13 | Twenty-third technical review | "The rubric must be checked too" | Calibration against labels (§19.2), quality repair (§7.5), boundary arithmetic |
 | v2.14 | Twenty-fourth technical review | "The set must disagree" | Twenty labelled plans (§19.2), the quality gate in the service (§7.5), a maximum cut rate |
 | v2.15 | Twenty-fifth technical review | "Write the expectations first" | Blind labelling (§19.2), one shared rule for hook and cuts, a gate that refuses (§7.5) |
-| v2.16 | *Not started* | — | The six open findings in `docs/reviews/v2.16-candidates.md` — four purchases, one person, one tension |
+| v2.16 | Twenty-sixth technical review | "Measure what the second opinion adds" | A shape judge (§19.2), a coverage measurement, expectation-list comparison |
+| v2.17 | *Not started* | — | The six open findings in `docs/reviews/v2.17-candidates.md` — seventh version with the same four purchases |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -504,6 +505,22 @@ v2.15 wrote the expectations down before the plan existed, and the second judge 
 
 **The gate can refuse.** It repaired, reported and queued the job anyway, so an unrepairable plan failed later in the renderer where the error costs more. It now returns 422 with the criterion that would not move, and no job is created.
 
+## 2x. The v2.16 round
+
+v2.16 built a second opinion and measured that it adds nothing, which is the most useful thing it could have reported.
+
+| # | Commit | What it did |
+|---|---|---|
+| 150 | `feat: a shape judge and a coverage measurement` | Distribution spread instead of thresholds; what each judge catches |
+| 151 | `docs(spec): add the v2.16 source` | 11 anchored edits |
+| 152 | `docs: release notes for v2.16` | Changelog, version line, this section |
+
+**Agreement was the wrong metric.** v2.15 measured two judges agreeing, and they agreed because they read one set of constants. v2.16 replaced the metric with coverage — which bad plans each judge catches — and the answer is that the shape judge catches none that the threshold judge misses. Every bad plan is caught; none is caught only by shape.
+
+**The reason is more interesting than the result.** A bounded hook makes an evenly divided plan fail a threshold as well, so the two judges are correlated by the product's own rules rather than by shared constants. A second opinion is only independent when the thing it measures is not already implied by the first.
+
+**And the shape judge's first exemption was wrong.** It exempted plans with more than six cuts as "montages", which let seven evenly divided shots — the exact case it exists to catch — pass. The exemption is now the mean shot length: a cut faster than one per three seconds is a montage, anything slower that is perfectly even was divided rather than edited.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -524,12 +541,12 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The capacity model is unmeasured | `reviews/v2.16-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
+| The capacity model is unmeasured | `reviews/v2.17-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
 | Three GPU signals remain unemitted | §2 | GPU memory, encoder utilisation, success rate — **a GPU machine** |
 | No model has produced a plan | §3 | The product's premise — **a model budget** |
 | The identity corpus has no data | §4 | Any accuracy claim — **procurement** |
 | The blind judge still has one author | §5 | Whether the rubric's blind spots survive a second person |
-| Two judges agree because they share constants | §6 | Independent validation, as opposed to a regression guard |
+| No labelled plan the shape judge alone catches | §6 | Whether an evenly divided body is a bad film |
 
 Nothing in that list is architectural. Four are gated on a purchase — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 

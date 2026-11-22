@@ -51,15 +51,16 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 | Version | Theme | Scope | Estimate | Blocked on |
 |---|---|---|---|---|
 | **v2.7** | State is shared | Dispatcher, revocation and buckets in the store, render-minute quota | **Done** | — |
-| v2.8 | Assets exist | Asset table, ingest, probing, proxies, conforming, storage quota; §10's analysis pipeline skeleton | 4–6 sessions | — |
-| v2.9 | It renders at 4K | NVENC path, chunked render with segment publishing, the §12.9 matrix measured, benchmarks filled | 5–8 sessions | A GPU machine |
+| **v2.8** | Assets exist | Asset table, ingest, probe, proxy, conform, storage quota, shot detection | **Done** | — |
+| **v2.9** | The render resumes | Chunked render proved byte-identical, segment publishing, VFR refused | **Done** | — |
+| v2.10 | It renders at 4K | NVENC path, encoded-segment concatenation, the §12.9 matrix measured, benchmarks filled | 4–6 sessions | A GPU machine |
 | v3.0 | P0 complete | Model-driven planner (two passes), the prompt→file path end to end, evaluation corpus, the 80% target measured | 8–12 sessions | Model budget, v2.8 and v2.9 |
 | v3.1 | Faces | Labelled corpus, accuracy measured, the feature enabled behind a flag | 2–3 sessions | **Procurement**, legal review |
 | v3.2 | Designed titles | Remotion to an alpha intermediate, composited at record frames, golden hash | 3–4 sessions | A decision to fund it |
 | v3.3 | The platform | `origin`/`params_hash` contract exercised against the 3D and dubbing engines | 2–3 sessions | Those engines' owners |
 | v4.0 | Product surface | Whatever the platform needs — accounts, billing, UI | Not estimated here | Platform decisions |
 
-**Rough total to a system that turns a prompt into a rendered file at 1080p:** v2.8 + v2.9 (1080p only) + v3.0 ≈ **17–26 sessions**, before faces, titles or the platform.
+**Rough total to a system that turns a prompt into a rendered file at 1080p:** v2.10 (1080p only) + v3.0 ≈ **12–18 sessions**, before faces, titles or the platform. v2.8 and v2.9 removed the two largest slices.
 
 **To the full specification as written:** add v3.1, v3.2, v3.3 ≈ **24–36 sessions**, plus procurement and hardware.
 

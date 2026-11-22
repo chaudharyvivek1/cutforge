@@ -8,7 +8,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 
 | Version | Date | Document | Tests | Figures |
 |---|---|---|---|---|
-| **v2.8** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.8.docx`](docs/spec/AI_Video_Editor_Architecture_v2.8.docx) | 251 | 91 |
+| **v2.9** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.9.docx`](docs/spec/AI_Video_Editor_Architecture_v2.9.docx) | 265 | 91 |
 
 ## The line
 
@@ -33,6 +33,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 | v2.6 | 22 Nov 2026 | Sixteenth review | The credential has a life: expiry, rotation, revocation, rate limits and delivery retry |
 | v2.7 | 22 Nov 2026 | Seventeenth review | State is shared: the dispatcher posts, revocation and buckets live in the store |
 | v2.8 | 22 Nov 2026 | Eighteenth review | Assets exist: probe, deduplicate, proxy, conform with its map; shots detected |
+| v2.9 | 22 Nov 2026 | Nineteenth review | The render resumes: chunked equals single-pass, segments published, VFR refused |
 
 ## What "release" means here
 

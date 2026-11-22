@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.9 — 22 November 2026
+
+**Basis:** nineteenth technical review.
+**Theme:** the render can be resumed. Chunks are byte-identical to a single pass, segments are published, and a VFR source is refused rather than mapped wrongly.
+
+| Finding | Resolved by |
+|---|---|
+| The store had six tables the migration lacked | `check_sql.py` now diffs table sets; five tables published with RLS — 22 in the migration |
+| Rendering at scale untested | `render_chunked()` — splits only where no transition spans, publishes segments, reuses on resume; chunked bytes equal the single pass |
+| Transcription had no engine | `Transcriber` interface and `RecordedTranscriber`, with a test from transcript to remapped captions |
+| Three GPU signals | Unchanged and stated |
+| VFR ingest emitted an affine map | `build_conform_map()` returns a table with timestamps and **raises** without them |
+| Identity corpus | Procurement |
+
+Also: the skill `technical-spec-versioning` gained `references/version-cadence.md` — the loop distilled from nineteen versions — and `scripts/audit.py`, which runs the pre-version audit against any repository.
+
+**Still open after v2.9:** six findings, in `docs/reviews/v2.10-candidates.md`. Two are now blocked on hardware rather than on work.
+
+---
+
 ## v2.8 — 22 November 2026
 
 **Basis:** eighteenth technical review.

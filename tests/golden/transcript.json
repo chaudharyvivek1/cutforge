@@ -1,0 +1,35 @@
+{
+  "source": "synthetic ASR output, for the contract only",
+  "words": [
+    {
+      "text": "this",
+      "start": 0,
+      "end": 6
+    },
+    {
+      "text": "is",
+      "start": 6,
+      "end": 12
+    },
+    {
+      "text": "the",
+      "start": 12,
+      "end": 18
+    },
+    {
+      "text": "product",
+      "start": 18,
+      "end": 40
+    },
+    {
+      "text": "close",
+      "start": 40,
+      "end": 60
+    },
+    {
+      "text": "up",
+      "start": 60,
+      "end": 80
+    }
+  ]
+}

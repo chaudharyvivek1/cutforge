@@ -65,6 +65,35 @@ CREATE TABLE IF NOT EXISTS webhook_endpoints (
   UNIQUE (tenant_id, id)
 );
 
+CREATE TABLE IF NOT EXISTS assets (
+  id            TEXT PRIMARY KEY,
+  tenant_id     TEXT NOT NULL,
+  project_id    TEXT NOT NULL,
+  sha256        TEXT NOT NULL,
+  bytes         INTEGER NOT NULL,
+  fps_num       INTEGER NOT NULL,
+  fps_den       INTEGER NOT NULL,
+  frames        INTEGER NOT NULL,
+  width         INTEGER NOT NULL,
+  height        INTEGER NOT NULL,
+  transfer      TEXT,
+  created_at    REAL NOT NULL,
+  UNIQUE (tenant_id, project_id, sha256),
+  UNIQUE (tenant_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS asset_derivatives (
+  id          TEXT PRIMARY KEY,
+  tenant_id   TEXT NOT NULL,
+  asset_id    TEXT NOT NULL,
+  kind        TEXT NOT NULL,          -- proxy | conform | analysis
+  bytes       INTEGER NOT NULL,
+  params_hash TEXT NOT NULL,
+  path        TEXT NOT NULL,
+  created_at  REAL NOT NULL,
+  UNIQUE (tenant_id, asset_id, kind, params_hash)
+);
+
 CREATE TABLE IF NOT EXISTS tokens (
   token      TEXT PRIMARY KEY,
   tenant_id  TEXT NOT NULL,
@@ -267,6 +296,63 @@ class Store:
                      job_id, event, body.decode(), self.clock()))
             except sqlite3.IntegrityError:
                 pass                      # already emitted: idempotent by design
+
+    # --------------------------------------------------------------- assets
+    def register_asset(self, tenant, project, sha256, bytes_, fps, frames,
+                       width, height, transfer=None):
+        """§10.1: an asset is content-addressed and deduplicated per project."""
+        with self.tx() as db:
+            row = db.execute(
+                "SELECT * FROM assets WHERE tenant_id=? AND project_id=? AND sha256=?",
+                (tenant, project, sha256)).fetchone()
+            if row:
+                return dict(row), False
+            asset_id = f"ast_{uuid.uuid4().hex[:8]}"
+            db.execute(
+                "INSERT INTO assets (id, tenant_id, project_id, sha256, bytes, fps_num,"
+                " fps_den, frames, width, height, transfer, created_at)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                (asset_id, tenant, project, sha256, bytes_, fps[0], fps[1], frames,
+                 width, height, transfer, self.clock()))
+            return dict(db.execute("SELECT * FROM assets WHERE id=?", (asset_id,)).fetchone()), True
+
+    def add_derivative(self, tenant, asset_id, kind, bytes_, params_hash, path):
+        derivative_id = f"drv_{uuid.uuid4().hex[:8]}"
+        with self.tx() as db:
+            db.execute(
+                "INSERT OR REPLACE INTO asset_derivatives (id, tenant_id, asset_id, kind,"
+                " bytes, params_hash, path, created_at) VALUES (?,?,?,?,?,?,?,?)",
+                (derivative_id, tenant, asset_id, kind, bytes_, params_hash, str(path),
+                 self.clock()))
+        return derivative_id
+
+    def asset(self, tenant, asset_id):
+        row = self.db.execute("SELECT * FROM assets WHERE tenant_id=? AND id=?",
+                              (tenant, asset_id)).fetchone()
+        return dict(row) if row else None
+
+    def derivative(self, tenant, asset_id, kind, params_hash):
+        row = self.db.execute(
+            "SELECT * FROM asset_derivatives WHERE tenant_id=? AND asset_id=? AND kind=?"
+            " AND params_hash=?", (tenant, asset_id, kind, params_hash)).fetchone()
+        return dict(row) if row else None
+
+    def stored_bytes(self, tenant):
+        """Originals plus derivatives, which is what a storage quota counts."""
+        original = self.db.execute(
+            "SELECT COALESCE(SUM(bytes),0) n FROM assets WHERE tenant_id=?",
+            (tenant,)).fetchone()["n"]
+        derived = self.db.execute(
+            "SELECT COALESCE(SUM(bytes),0) n FROM asset_derivatives WHERE tenant_id=?",
+            (tenant,)).fetchone()["n"]
+        return original + derived
+
+    def consume_storage(self, tenant, additional_bytes, limit):
+        """§16.1's other half: stored bytes, now that there is a table to sum."""
+        used = self.stored_bytes(tenant)
+        if used + additional_bytes > limit:
+            return False, used
+        return True, used
 
     # ------------------------------------------------------- shared state
     def store_token(self, token, tenant, role, subject, issued_at, expires_at):

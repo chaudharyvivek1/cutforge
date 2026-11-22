@@ -33,7 +33,10 @@ Stated because a platform composes engines, and a boundary that is not written d
 ## Repository map
 
 ```
+README.md                                    what this is, what it refuses to be, how to read it
 docs/
+  README.md                                  index: every document and who should read it
+  worklog.md                                 how the repo was built, step by step, and what is open
   spec/
     AI_Video_Editor_Architecture_v1.3.docx   canonical artefact of record
     v1.3.md                                  generated, diffable rendering of the same
@@ -49,12 +52,13 @@ build/
   check_figures.py                           recomputes every number the spec asserts
 skills/
   technical-spec-versioning/                 the routine this repo is built with
-CHANGELOG.md
+CHANGELOG.md                                 what each version changed and why
+CONTRIBUTING.md                              how a version is cut, how a finding is proposed
 ```
 
 ## How to read this
 
-**Fifteen minutes, for orientation.** Read §1 (executive summary) and §4 (system architecture) of the spec, then `docs/engine/01-platform-map.md`. That is enough to know whether the design is sound and where it plugs in.
+**Fifteen minutes, for orientation.** Read §1 (executive summary) and §4 (system architecture) of the spec, then `docs/engine/01-platform-map.md`. That is enough to know whether the design is sound and where it plugs in. [`docs/README.md`](docs/README.md) carries the same guidance per role — reviewer, compiler author, platform author, spec author.
 
 **Two hours, to review the design.** §5 (time and frame model), §6 (the IR) and §11 (the render engine). Those three sections carry almost all the risk. If the time model is wrong, every downstream section inherits the error.
 

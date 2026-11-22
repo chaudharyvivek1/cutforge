@@ -6,6 +6,28 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v1.5 — 22 November 2026
+
+**Basis:** fifth technical review. Verdict: the rules are right; the cases at their edges are untested.
+**Theme:** the edge cases. No new requirement, no new tool, no new architecture — every change makes an existing rule reachable where it had not been exercised.
+
+| Finding | Resolved by |
+|---|---|
+| The VFR half of the conform map was specified but unproven | §5.9.4 works a six-frame VFR excerpt through the table map, shows the skipped conformed index and the one-frame delta, and states the property: non-decreasing, injective but not surjective, invertible within one frame |
+| The atempo cascade had no awkward-ratio fixture | §5.11 states seven decimal places of precision (2.16 samples of drift at six on a 45 s output, 0.216 at seven) and works 3.7× and 1/3.7× to the sample, including a non-integral source count |
+| A transition beside a sped clip had no handle rule | §5.7 measures the handle in record frames and derives the source requirement through the speed; worked at 1×, 2× and 0.5× |
+| Beat snapping from a sped music bed was undefined | §5.10 stores tempo maps in source time and projects them through the full transform, so positions and intervals scale together; worked at 1.05× |
+| Erasure quarantine had no owner and no release path | §16.6.1 gives three terminal outcomes with an actor and a deadline each; withdrawal is the default and lawful retention must be argued for |
+| `origin.params_hash` was undefined per engine | §6.8 makes the hash opaque and namespaced: comparable only within one engine, and a cross-engine comparison is rejected with `ORIGIN_INCOMPARABLE` |
+| The 540p preview proxy was required but not costed | §12.7 adds it at 2.7 GB per hour, half the 1080p proxy |
+| Storage and egress were outside the cost model | §20 is retitled to compute and tokens, and §20.3 gives the arithmetic: storing an hour of 4K60 costs 2.76× analysing it, and egress is two orders of magnitude above render |
+
+Also: the figure checker grew from 48 to 76 assertions, including the VFR mapping, the atempo sample counts and the storage ratio. One assertion caught a false claim in this version's own prose — the VFR map is strictly increasing on the example, not merely non-decreasing — which is the check doing its job on the version that added it.
+
+**Still open after v1.5:** six findings, in `docs/reviews/v1.6-candidates.md`, two of them verification debt rather than specification defects.
+
+---
+
 ## v1.4 — 22 November 2026
 
 **Basis:** fourth technical review. Verdict: the architecture is settled; what remained was a boundary, not a design.

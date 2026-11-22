@@ -15,7 +15,8 @@ Each version is a full standalone specification answering one external technical
 | v1.2 | Second technical review | "Much better, not yet executable" | Mixed-rate speed arithmetic, multi-track duration, composite tenant keys, the 4K60 capacity model |
 | v1.3 | Third technical review | "Architecture approved, complete P0 readiness withheld" | Executable contracts: BigInt wire format, complete migration, P010 figures, preview cost, RLS threat model, missing endpoints |
 | v1.4 | Fourth technical review | "Architecture settled; a boundary remained" | The conform map (§5.9), sound that follows its picture (§5.11), remapped captions (§5.10), tolerances in milliseconds (§5.12), op inverses (§6.6), reconciled unit economics (§12.11), erasure propagation (§16.6), asset provenance (§6.8) |
-| v1.5 | *Not started* | — | The eight open findings in `docs/reviews/v1.5-candidates.md` |
+| v1.5 | Fifth technical review | "Rules right; edge cases untested" | VFR map proved (§5.9.4), atempo to the sample (§5.11), transition handles at speed (§5.7), tempo grids that scale (§5.10), erasure release paths (§16.6.1), storage and egress costed (§20.3) |
+| v1.6 | *Not started* | — | The six open findings in `docs/reviews/v1.6-candidates.md` |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -76,6 +77,24 @@ Every version gets reviewed; v1.4 got a second look before it was announced, on 
 
 Five of the six were found by rendering the document and reading it, not by the checks — which is the argument for `build/check_consistency.py`, added afterwards so the sixth and its siblings fail the build next time.
 
+## 2c. The v1.5 round
+
+v1.5 is the first version with no structural change: no new requirement, no new tool, no new schema field. It exists because every rule v1.4 added had a case it had not been exercised on, and three of the eight findings were created by v1.4's own resolutions.
+
+The work was 27 anchored edits to the v1.4 source, then renumbering, then 28 new figure assertions. Two of the new assertions failed on first run and both were right to.
+
+| # | Commit | What it did |
+|---|---|---|
+| 23 | `docs(spec): add the v1.5 source` | 27 anchored edits, five new subsections and tables |
+| 24 | `build: extend the figure checker to 76 assertions` | VFR mapping, atempo sample counts, handle domains, storage ratio, beat scaling |
+| 25 | `docs(spec): build v1.5 and archive v1.4` | 54 pages, 42 tables |
+| 26 | `docs(review): v1.6 candidates` | Six open findings, two of them verification debt |
+| 27 | `docs: changelog, README, index and worklog for v1.5` | Version line, reading order, this section |
+
+**The check caught a false claim in the prose.** §5.9.4 originally said the VFR map is "non-decreasing but not strictly increasing". On the worked example it is strictly increasing — each successive native frame maps to a larger conformed frame. What is true is narrower and more interesting: the map is *injective but not surjective*, so the image skips a conformed index, and the map is only non-decreasing in general because two packets can share a timestamp. The assertion now tests both facts, including the shared-timestamp case, and the paragraph says what is true.
+
+That is the second time a figure check has found an error in the sentence it was written to support rather than in the number. The first was Python's `round()` being half-to-even.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -96,16 +115,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The VFR half of the conform map is unproven | `reviews/v1.5-candidates.md` §1 | A fixture, before any VFR customer |
-| The atempo cascade has no awkward-ratio fixture | §2 | Speed fidelity at ratios that do not decompose |
-| Erasure quarantine has no owner or release path | §3 | A product and legal decision, not an engine one |
-| `origin.params_hash` is undefined per engine | §4 | Cross-engine provenance comparisons |
-| A transition beside a sped clip has no handle rule | §5 | Dissolves against 2× clips |
-| The 540p preview proxy is required but not costed | §6 | Storage and ingest figures |
-| Beat snapping from a sped music bed is undefined | §7 | Musical edits over time-stretched tracks |
-| Storage and egress stay outside the cost model | §8 | Any 4K60 business case |
+| Audio transition handles on a sped clip are unstated | `reviews/v1.6-candidates.md` §1 | Acrossfades against stretched clips |
+| A table-backed map under speed is walked non-uniformly | §2 | VFR plus speed, the combination of two v1.5 fixes |
+| `render_duration_frames` and `include_trailing_audio` overlap | §3 | Two fields describing one decision |
+| Erasure deadlines have no jurisdictional basis | §4 | Any promise made to a regulator |
+| The VFR corpus fixture is specified and not built | §5 | Verification debt; no code depends on it yet |
+| Egress is priced at one flat rate | §6 | Delivery economics at volume |
 
-Nothing in that list is architectural. All eight are contract and fixture work, which is the honest position for a design that has survived four reviews without a structural change — and three of them exist because v1.4 changed something, not because v1.4 missed something.
+Nothing in that list is architectural, and two of the six are verification debt rather than defects — the rule is right and nothing exercises it. That distinction matters operationally: a rule that is wrong needs a version, a rule that is unexercised needs a fixture.
 
 ## 5. Conventions this repository follows
 

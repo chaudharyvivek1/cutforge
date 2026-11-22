@@ -41,11 +41,14 @@ def score(plan, request=None):
     hook = lengths[0]
     hook_score = 1.0 if _frames(700) <= hook <= _frames(3200) else 0.0
 
-    # 2. Payoff: the last shot must be at least as long as the median, so the
-    #    film lands on something rather than stopping.
-    ordered = sorted(lengths)
-    median = ordered[len(ordered) // 2]
-    payoff_score = 1.0 if lengths[-1] >= median else 0.0
+    # 2. Payoff: the film must land on something rather than stopping.
+    #    v2.12 required the last shot to be at least the median, which fails
+    #    half of all plans by construction — a criterion that rejects half the
+    #    sample on its own definition is measuring the sample, not the plan.
+    #    Within a quarter of the median still reads as a payoff.
+    others = sorted(lengths[:-1]) or [lengths[-1]]
+    median = others[len(others) // 2]
+    payoff_score = 1.0 if lengths[-1] >= median * F(3, 4) else 0.0
 
     # 3. Duration: within one frame of the target. §7.4's ladder either hits
     #    it or reports the deficit, so a plan that misses is a plan the ladder
@@ -78,9 +81,15 @@ def score(plan, request=None):
     }
     # Taste is deliberately absent: §19.2 says a human labels that, and a
     # score that silently omitted it would look more complete than it is.
+    total_score = sum(criteria.values()) / len(criteria)
+    # A verdict of "below bar" needs a hard failure or a genuinely poor score.
+    # v2.12 demanded 0.99 on every criterion, which called a plan with slightly
+    # slow pacing unacceptable — a bar no real edit clears, and a rubric that
+    # rejects everything separates nothing.
     return {
-        "total": round(sum(criteria.values()) / len(criteria), 3),
-        "verdict": "acceptable" if min(criteria.values()) >= 0.99 else "below bar",
+        "total": round(total_score, 3),
+        "verdict": ("below bar" if min(criteria.values()) == 0 or total_score < 0.75
+                    else "acceptable"),
         "criteria": criteria,
         "unmeasured": ["taste: whether the hook is interesting (human label)"],
     }

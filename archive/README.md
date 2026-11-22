@@ -29,5 +29,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v2.12.docx` | v2.12 | Twenty-second technical review — the rubric, a bounded hook, a worker loop, a split suite |
 | `AI_Video_Editor_Architecture_v2.13.docx` | v2.13 | Twenty-third technical review — the rubric calibrated, quality repair |
 | `AI_Video_Editor_Architecture_v2.14.docx` | v2.14 | Twenty-fourth technical review — twenty labelled plans, the quality gate in the service |
+| `AI_Video_Editor_Architecture_v2.15.docx` | v2.15 | Twenty-fifth technical review — blind labelling, one shared rule, a gate that refuses |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

@@ -6,6 +6,32 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v1.4 — 22 November 2026
+
+**Basis:** fourth technical review. Verdict: the architecture is settled; what remained was a boundary, not a design.
+**Theme:** the frame-domain boundary. Every finding was two true statements that had never been introduced to each other.
+
+| Finding | Resolved by |
+|---|---|
+| No conform map between native and conformed frames — §5.3 says the renderer only decodes conformed frames, §5.6 answers in native frames, nothing joined them | §5.9: a total, monotone, stored map per asset; the compiler consumes conformed indices only; Appendix A works all five clips through it |
+| Speed computed in the wrong domain — conforming §5.6's answer double-rounds 501 native into 601 against a correct 600 | §5.9.3: native-space arithmetic for reporting and bounds, `C = R × s` in conformed space for the render path, rounded once |
+| Speed said nothing about audio | §5.11: `speed.audio` with atempo as default, the cascade rule outside 0.5–2.0, asserted sample counts |
+| Captions and markers never remapped | §5.10: one affine source-to-record transform per clip, cues stored in record time, mapped word position as the acceptance test |
+| Tolerances expressed in frames | §5.12: authored in milliseconds or beats, converted once at compile time; §7.2's plan DSL follows |
+| The native-duration invariant guarded a path that does not exist | §6.5: both bounds, native for authoring and conformed for rendering, plus a required conform map version per clip |
+| “Every op has an inverse” was false for `remove_clip`, `trim` and `snap_to_beat` | §6.6: an inverse is a function of (base revision, op), materialised at apply time and stored; `snap_to_beat` is expanded before apply_ops |
+| `speed_curve` was in the effect enum but not in the compiler | §6.4 removes it and states the rule: an enum value is a promise the compiler keeps |
+| Capacity and cost disagreed by 1.85× — 2.77 streams per L4 against one job owning the card | §12.11 states three operating points; §20 adopts the headroom point at $0.00417 and keeps the dedicated figure as the tail case |
+| Erasure did not propagate to caches, index entries or delivered renders | §16.6: tombstone, cache invalidation, index removal, render quarantine, erasure log, and retention flagged as a legal decision |
+| A held job had no column for its deadline | §13.3: `hold_question` and `hold_deadline` with a CHECK binding them to `awaiting_input` |
+| Assets carried no upstream provenance | §6.8: `origin: {engine, job_id, version, params_hash}` on the asset and in the render manifest |
+
+Also in this version: the markdown becomes the source and the `.docx` is built from it, so a change is reviewed as text and shipped as a document. `build/check_figures.py` grew from 32 to 48 assertions, including Appendix A's five clips at four rates.
+
+**Still open after v1.4:** eight findings, in `docs/reviews/v1.5-candidates.md`. Three of them were created by v1.4's own resolutions.
+
+---
+
 ## v1.3 — 19 November 2026
 
 **Basis:** third technical review. Verdict: architecture approved, "complete P0 readiness" withheld.

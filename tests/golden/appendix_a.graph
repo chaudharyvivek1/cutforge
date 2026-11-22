@@ -3,7 +3,7 @@
 [2:v]trim=start_frame=60:end_frame=254,setpts=PTS-STARTPTS,scale=1080:1920[v_c3];
 [3:v]trim=start_frame=900:end_frame=1562,setpts=PTS-STARTPTS,scale=1080:1920[v_c4];
 [0:v]trim=start_frame=2160:end_frame=2397,setpts=PTS-STARTPTS,scale=1080:1920[v_c5];
-[v_c1][v_c2]xfade=transition=fade:duration=0.400400:offset=0[tr_c1_c2];
-[v_c2][v_c3]xfade=transition=fade:duration=0.400400:offset=0[tr_c2_c3];
-[v_c3][v_c4]xfade=transition=fade:duration=0.400400:offset=0[tr_c3_c4];
-[v_c4][v_c5]xfade=transition=fade:duration=0.400400:offset=0[tr_c4_c5]
+[v_c1][v_c2]xfade=transition=fade:duration=0.400400:offset=0.000000[tr_c1_c2];
+[v_c2][v_c3]xfade=transition=fade:duration=0.400400:offset=0.000000[tr_c2_c3];
+[v_c3][v_c4]xfade=transition=fade:duration=0.400400:offset=0.000000[tr_c3_c4];
+[v_c4][v_c5]xfade=transition=fade:duration=0.400400:offset=0.000000[tr_c4_c5]

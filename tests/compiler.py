@@ -64,6 +64,13 @@ def _video_item(item, fps, width, height, ir):
     if item.get("kind") == "gap":
         # §6.3: an authored gap is black, not a hole
         return [f"color=c=black:s={width}x{height}:r={fps}:d={(rec_out - rec_in)}[v_{rid}]"]
+    if item.get("kind") == "title":
+        # §11.4: captions and titles rasterise at output resolution, never at
+        # a fixed pixel size — a 1080p caption scaled to 4K is visibly soft.
+        size = round(height * 0.045)
+        text = item["text"].replace(":", "\\:").replace("'", "")
+        return [f"color=c=black@0.0:s={width}x{height}:r={fps}:d={rec_out - rec_in},"
+                f"drawtext=text='{text}':fontsize={size}:x=(w-text_w)/2:y=h*0.82[v_{rid}]"]
 
     src = item["source"]
     speed = item.get("speed")
@@ -84,7 +91,43 @@ def _video_item(item, fps, width, height, ir):
     if speed != 1:
         chain.append(f"setpts=PTS/{float(speed)}")
     chain.append(f"scale={width}:{height}")
+
+    # §12.6: an HDR source on an SDR timeline is tone-mapped, never retagged
+    if ir["project"].get("color_space") == "rec709" and src.get("transfer") in ("arib-std-b67", "smpte2084"):
+        chain.extend(_tonemap(src["transfer"]))
+
+    for effect in item.get("effects", []) or []:
+        chain.extend(_effect(effect, fps))
+
     return [f"[{_input_index(ir, item['asset'])}:v]" + ",".join(chain) + f"[v_{rid}]"]
+
+
+def _tonemap(transfer):
+    """§12.6: linearise, compress highlights, map BT.2020 into BT.709, strip SEI."""
+    tin = "arib-std-b67" if transfer == "arib-std-b67" else "smpte2084"
+    return [f"zscale=tin={tin}:t=linear:npl=100", "format=gbrpf32le",
+            "zscale=p=bt709", "tonemap=hable:desat=0",
+            "zscale=t=bt709:m=bt709:r=tv", "format=yuv420p",
+            "sidedata=mode=delete:type=MASTERING_DISPLAY_METADATA",
+            "sidedata=mode=delete:type=CONTENT_LIGHT_LEVEL"]
+
+
+def _effect(effect, fps):
+    """Only the effects the compiler implements. §6.4: an enum value is a promise."""
+    kind = effect.get("type")
+    if kind == "transform":
+        chain = []
+        if "crop" in effect:
+            w, h, x, y = effect["crop"]
+            chain.append(f"crop={w}:{h}:{x}:{y}")
+        if "rotate" in effect:
+            chain.append(f"rotate={effect['rotate']}*PI/180")
+        return chain
+    if kind in ("fade_in", "fade_out"):
+        direction = "in" if kind == "fade_in" else "out"
+        frames = effect.get("frames", 12)
+        return [f"fade=t={direction}:st=0:d={float(F(frames) / fps):.6f}"]
+    raise NotImplementedError(f"effect {kind} has no compiler implementation (§6.4)")
 
 
 def _audio_item(item, fps, ir):
@@ -109,8 +152,17 @@ def _transitions(seq, fps):
             a, b = t["between"]
             frames = t["frames"]
             seconds = float(F(frames) / fps)
-            out.append(f"[v_{a}][v_{b}]xfade=transition=fade:duration={seconds:.6f}"
-                       f":offset=0[tr_{a}_{b}]")
+            kind = t.get("type", "dissolve")
+            align = t.get("align", "center")
+            if kind == "wipe":
+                # §5.7: align moves the overlap, and the perceptual cut is its middle
+                name = {"start": "wipeleft", "end": "wiperight"}.get(align, "wipeleft")
+                offset = {"start": 0.0, "end": seconds / 2, "center": seconds / 4}[align]
+            else:
+                name = "fade"
+                offset = 0.0
+            out.append(f"[v_{a}][v_{b}]xfade=transition={name}:duration={seconds:.6f}"
+                       f":offset={offset:.6f}[tr_{a}_{b}]")
     return ";\n".join(out)
 
 
@@ -161,3 +213,41 @@ def appendix_a_ir():
         "metadata": {"assets": [{"id": "ast_a91"}, {"id": "ast_b07"},
                                 {"id": "ast_c13"}, {"id": "ast_d22"}]},
     }
+
+
+# --------------------------------------------------------------- fixtures
+def _base_ir():
+    return appendix_a_ir()
+
+
+def overlay_ir():
+    """A logo overlay with a transform effect, and a fade in."""
+    ir = _base_ir()
+    clip = ir["sequence"]["tracks"][0]["items"][0]
+    clip["effects"] = [{"type": "transform", "crop": [960, 540, 0, 0]},
+                       {"type": "fade_in", "frames": 12}]
+    return ir
+
+
+def captions_ir():
+    """A title item on the primary track, rasterised at output resolution."""
+    ir = _base_ir()
+    ir["sequence"]["tracks"][0]["items"].insert(
+        0, {"kind": "title", "id": "t1", "text": "Made in India",
+            "record": {"in": 0, "out": 48}})
+    return ir
+
+
+def hdr_ir():
+    """An HLG source on an SDR timeline: tone-mapped, never retagged."""
+    ir = _base_ir()
+    ir["sequence"]["tracks"][0]["items"][0]["source"]["transfer"] = "arib-std-b67"
+    return ir
+
+
+def wipe_ir():
+    """A wipe aligned to the start of the overlap rather than centred."""
+    ir = _base_ir()
+    ir["sequence"]["tracks"][0]["transitions"][0] = {
+        "between": ["c1", "c2"], "type": "wipe", "frames": 12, "align": "start"}
+    return ir

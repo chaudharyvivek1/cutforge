@@ -265,6 +265,14 @@ def main():
     check("egress, 3 TB", float(egress(3000)), 190.0, 0.005)
     check("blended per TB at 3 TB", round(float(egress(3000) / 3), 2), 63.33, 0.005)
 
+    # ------------------------------ v1.7  the 95th-percentile commitment
+    # 40 Mbps sustained for 30 days, against 3 TB actually delivered.
+    seconds_30d = 30 * 24 * 3600
+    provisioned_gb = 40e6 * seconds_30d / 8 / 1e9
+    check("CDN provisioned GB at 40 Mbps", round(provisioned_gb), 12960)
+    check("provisioned TB", round(provisioned_gb / 1000, 2), 12.96, 0.005)
+    check("provisioned / delivered", round(provisioned_gb / 3000, 1), 4.3, 0.05)
+
     # ------------------------------------------------ report
     print(f"{CHECKS} figures checked against first principles.")
     if FAILURES:

@@ -14,7 +14,8 @@ Each version is a full standalone specification answering one external technical
 | v1.1 | First technical review | "Sound architecture, not implementation-ready" | Time and frame model, full IR schema, database design, API and tool contracts, enforced multi-tenancy |
 | v1.2 | Second technical review | "Much better, not yet executable" | Mixed-rate speed arithmetic, multi-track duration, composite tenant keys, the 4K60 capacity model |
 | v1.3 | Third technical review | "Architecture approved, complete P0 readiness withheld" | Executable contracts: BigInt wire format, complete migration, P010 figures, preview cost, RLS threat model, missing endpoints |
-| v1.4 | *Not started* | — | The ten open findings in `docs/reviews/v1.4-candidates.md` |
+| v1.4 | Fourth technical review | "Architecture settled; a boundary remained" | The conform map (§5.9), sound that follows its picture (§5.11), remapped captions (§5.10), tolerances in milliseconds (§5.12), op inverses (§6.6), reconciled unit economics (§12.11), erasure propagation (§16.6), asset provenance (§6.8) |
+| v1.5 | *Not started* | — | The eight open findings in `docs/reviews/v1.5-candidates.md` |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -40,6 +41,26 @@ Twelve commits, each one a coherent step. The order is the order the work was ac
 | 14 | `docs: contributing guide` | `CONTRIBUTING.md` — how a version is cut, how a finding is proposed, the conventions |
 | 15 | `docs: work log` | This file |
 
+## 2a. The v1.4 round, and how it was built
+
+v1.4 was built from the previous version's markdown rather than re-authored, because the findings were localised: one new section block, one corrected schema field, three new tables and a set of paragraph rewrites. Each edit asserted that its anchor matched exactly once, so an edit that silently failed to apply failed the build instead of shipping a document claiming a resolution it did not contain.
+
+The order matters and is worth repeating: the §0 table was written first, then the sections that had to justify each row, then the figures were extended to cover the new arithmetic, then the document was built.
+
+Commits, in order:
+
+| # | Commit | What it did |
+|---|---|---|
+| 16 | `docs(spec): add v1.4 source` | The markdown, edited from v1.3 with 34 anchored replacements and three new sections |
+| 17 | `build: add the docx builder` | `build/build_docx.py` — house style reproduced: A4, Calibri, navy captions, tinted table headers, code on a pale slab |
+| 18 | `build: extend the figure checker to 48 assertions` | Appendix A's five clips through the conform map, and the third cost operating point |
+| 19 | `docs(spec): build v1.4 and archive v1.3` | The `.docx`, and the superseded version moved to `archive/` |
+| 20 | `docs(review): v1.5 candidates` | Eight open findings, three of them created by v1.4's own resolutions |
+| 21 | `docs: changelog for v1.4` | Twelve rows, each naming the section that resolves it |
+| 22 | `docs: update README, index and worklog` | The version table, the reading order and this section |
+
+What the figure checker proved, beyond the arithmetic: extracting the built `.docx` back to markdown and re-running all 48 checks passes, which is the round-trip test that the document contains what its source says.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -60,18 +81,16 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| No conform map between native and conformed frames | `reviews/v1.4-candidates.md` §1 | The compiler's input format — this is the first decision of v1.4 |
-| Speed says nothing about audio | §2 | The IR schema; needs a version bump |
-| Captions and markers never remapped | §3 | Caption correctness on any edited clip |
-| Capacity and cost disagree by 1.85× | §4 | The business case, not the build |
-| Erasure does not propagate | §5 | Legal review before identity matching ships |
-| Op inverses are not derivable as claimed | §6 | Undo and the repair loop |
-| Tolerances expressed in frames | §7 | Behaviour differs between 30 and 60 fps projects |
-| A held job has no deadline column | §8 | The `awaiting_input` contract |
-| `speed_curve` in the enum, not in the compiler | §9 | A schema that promises an unimplemented capability |
-| Assets carry no upstream provenance | §10 | Diagnosing cross-engine faults once a second engine ships |
+| The VFR half of the conform map is unproven | `reviews/v1.5-candidates.md` §1 | A fixture, before any VFR customer |
+| The atempo cascade has no awkward-ratio fixture | §2 | Speed fidelity at ratios that do not decompose |
+| Erasure quarantine has no owner or release path | §3 | A product and legal decision, not an engine one |
+| `origin.params_hash` is undefined per engine | §4 | Cross-engine provenance comparisons |
+| A transition beside a sped clip has no handle rule | §5 | Dissolves against 2× clips |
+| The 540p preview proxy is required but not costed | §6 | Storage and ingest figures |
+| Beat snapping from a sped music bed is undefined | §7 | Musical edits over time-stretched tracks |
+| Storage and egress stay outside the cost model | §8 | Any 4K60 business case |
 
-Nothing in that list is architectural. All ten are contract work, which is the honest position for a design that has survived three reviews without a structural change.
+Nothing in that list is architectural. All eight are contract and fixture work, which is the honest position for a design that has survived four reviews without a structural change — and three of them exist because v1.4 changed something, not because v1.4 missed something.
 
 ## 5. Conventions this repository follows
 

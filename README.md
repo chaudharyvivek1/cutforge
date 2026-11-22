@@ -38,17 +38,18 @@ docs/
   README.md                                  index: every document and who should read it
   worklog.md                                 how the repo was built, step by step, and what is open
   spec/
-    AI_Video_Editor_Architecture_v1.3.docx   canonical artefact of record
-    v1.3.md                                  generated, diffable rendering of the same
+    AI_Video_Editor_Architecture_v1.4.docx   canonical artefact of record
+    v1.4.md                                  source of record, from which the .docx is built
     figures/                                 figures extracted from the document
   engine/
     01-platform-map.md                       where this engine sits, and what it talks to
     02-engine-contract.md                    the interface the platform may depend on
   reviews/
-    v1.4-candidates.md                       open findings the next version must close
-archive/                                     v1.0, v1.1 and v1.2, superseded
+    v1.5-candidates.md                       open findings the next version must close
+archive/                                     v1.0 through v1.3, superseded
 build/
-  extract_spec.py                            docx → markdown, faithful to formatting
+  build_docx.py                              markdown → styled .docx, house style
+  extract_spec.py                            docx → markdown, for round-trip verification
   check_figures.py                           recomputes every number the spec asserts
 skills/
   technical-spec-versioning/                 the routine this repo is built with
@@ -62,7 +63,7 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 
 **Two hours, to review the design.** §5 (time and frame model), §6 (the IR) and §11 (the render engine). Those three sections carry almost all the risk. If the time model is wrong, every downstream section inherits the error.
 
-**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v1.4-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate from the specification so that the spec never claims more than it has earned.
+**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v1.5-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
 
 ## Version history
 
@@ -72,7 +73,8 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 | v1.1 | First technical review | Time model, IR schema, database design, API and tool contracts, enforced multi-tenancy |
 | v1.2 | Second technical review | Mixed-rate speed arithmetic, multi-track duration, composite tenant keys, 4K60 capacity model |
 | v1.3 | Third technical review | Executable contracts: BigInt wire format, complete migration, P010 figures, preview cost, RLS threat model, endpoints |
-| v1.4 | *Not started* | The ten open findings in `docs/reviews/v1.4-candidates.md` |
+| v1.4 | Fourth technical review | The conform map, speed that carries its audio, remapped captions, reconciled unit economics, erasure propagation |
+| v1.5 | *Not started* | The eight open findings in `docs/reviews/v1.5-candidates.md` |
 
 Each version is a full standalone specification, not a patch. A reader should be able to open any one of them and understand the whole system.
 
@@ -85,13 +87,12 @@ Nothing here is legal advice. §16 covers biometric processing, consent and eras
 ## Building and checking
 
 ```bash
-python build/check_figures.py                       # recompute every asserted figure
-python build/extract_spec.py \
-    docs/spec/AI_Video_Editor_Architecture_v1.3.docx \
-    docs/spec/v1.3.md docs/spec/figures             # regenerate the markdown rendering
+python build/check_figures.py docs/spec/v1.4.md     # recompute every asserted figure
+python build/build_docx.py docs/spec/v1.4.md \
+    docs/spec/AI_Video_Editor_Architecture_v1.4.docx docs/spec   # build the document
 ```
 
-The `.docx` is the artefact of record. The markdown is generated from it and exists so the document is reviewable in a pull request — never edit the markdown by hand and expect it to survive the next regeneration.
+From v1.4 the markdown is the **source** and the `.docx` is built from it by `build/build_docx.py`, so a change is reviewed as text and shipped as a document. `build/extract_spec.py` runs the other way, and the round trip is checked: extracting the built `.docx` and re-running the figure check must pass on the extracted text. Earlier versions were authored in Word, which is why their markdown is generated rather than authored.
 
 ## Licence
 

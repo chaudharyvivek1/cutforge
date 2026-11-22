@@ -96,7 +96,7 @@ def add_rich(par, text, size=9.5, color=INK):
 
 
 # ------------------------------------------------------------------ document
-def setup(doc, footer_text):
+def setup(doc, footer_text, version):
     sec = doc.sections[0]
     sec.page_width, sec.page_height = Cm(21.0), Cm(29.7)
     sec.left_margin = sec.right_margin = Cm(2.0)
@@ -113,7 +113,7 @@ def setup(doc, footer_text):
     # header
     hdr = sec.header.paragraphs[0]
     hdr.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    style_run(hdr.add_run("Prompt-Driven AI Video Editor  ·  v1.4"),
+    style_run(hdr.add_run(f"Prompt-Driven AI Video Editor  ·  v{version}"),
               size=7.5, color=MUTED)
     para_border(hdr, color=RULE, size=4, space=2)
 
@@ -241,7 +241,8 @@ def main():
     lines = src.read_text(encoding="utf-8").split("\n")
 
     doc = Document()
-    setup(doc, "Prompt-Driven AI Video Editor — technical design specification")
+    version = lines[0].split("VERSION")[-1].strip() if "VERSION" in lines[0] else "1.4"
+    setup(doc, "Prompt-Driven AI Video Editor — technical design specification", version)
 
     # front matter: everything before "# Contents"
     idx = next(i for i, l in enumerate(lines) if l.strip() == "# Contents")

@@ -8,7 +8,7 @@ derived value against the value printed in the document. A figure that
 stops being true fails the build instead of aging quietly.
 
 Usage:
-    python build/check_figures.py [docs/spec/v1.3.md]
+    python build/check_figures.py [docs/spec/v1.4.md]
 """
 import math
 import re
@@ -58,7 +58,7 @@ FPS_25 = F(25, 1)
 
 
 def main():
-    md_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("docs/spec/v1.3.md")
+    md_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("docs/spec/v1.4.md")
     md = md_path.read_text(encoding="utf-8") if md_path.exists() else ""
 
     # ---------------------------------------------------------- 5.5  audio

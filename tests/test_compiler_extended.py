@@ -132,7 +132,7 @@ class TestAudioBus(GoldenMixin, unittest.TestCase):
         self.assertEqual(graph.count("loudnorm"), 1)
 
     def test_a_single_track_is_not_mixed(self):
-        graph = C.compile_ir(C.appendix_a_ir() + {}) if False else C.compile_ir(C._base_ir())
+        graph = C.compile_ir(C._base_ir())
         self.assertNotIn("amix", graph)
 
 

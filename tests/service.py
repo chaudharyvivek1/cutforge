@@ -9,11 +9,7 @@ It is a reference, not a product. One process, one dictionary, one thread.
 """
 import json
 import threading
-import time
-import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-
-from store import TERMINAL
 
 
 def job_view(row):

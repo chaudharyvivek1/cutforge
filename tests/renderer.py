@@ -20,7 +20,6 @@ import hashlib
 import json
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 try:
@@ -61,8 +60,13 @@ def make_source(path, seconds=2, size="320x180", rate=24, pattern="testsrc2"):
     return path
 
 
-def render_raw(graph, inputs, size="320x180", rate=24):
-    """Execute the graph and return a hash of the decoded frames."""
+def render_bytes(graph, inputs):
+    """Execute the graph and return the decoded frames as bytes.
+
+    yuv420p at the graph's own resolution, so a caller can count frames as
+    well as hash them. v2.2's `render_raw` returned only the hash, which meant
+    no test could assert a frame count without re-running ffmpeg itself.
+    """
     cmd = [FFMPEG, "-y", "-loglevel", "error"]
     for path in inputs:
         cmd += ["-i", str(path)]
@@ -71,7 +75,12 @@ def render_raw(graph, inputs, size="320x180", rate=24):
     result = subprocess.run(cmd, capture_output=True)
     if result.returncode != 0:
         raise RuntimeError(result.stderr.decode()[-800:])
-    return hashlib.sha256(result.stdout).hexdigest()
+    return result.stdout
+
+
+def render_raw(graph, inputs):
+    """Execute the graph and return a hash of the decoded frames."""
+    return hashlib.sha256(render_bytes(graph, inputs)).hexdigest()
 
 
 def load_hashes(path):

@@ -74,7 +74,8 @@ class TestCorpusPipeline(unittest.TestCase):
     """§8.6 — the loader, the validator and the rates, on a committed fixture."""
 
     def test_the_fixture_corpus_loads_and_measures(self):
-        data = Co.load(Path(__file__).parent / "golden" / "corpus_fixture.json")
+        data = Co.load(Path(__file__).parent / "golden" / "corpus_fixture.json",
+                       synthetic=True)
         pairs = [(e["distance"], e["same_person"]) for e in data["pairs"]]
         import accuracy as A
         result = A.rates(pairs)
@@ -82,8 +83,13 @@ class TestCorpusPipeline(unittest.TestCase):
         self.assertEqual(result["counts"]["fn"], 0)
         self.assertEqual(A.meets_targets(result), [])
 
+    def test_a_synthetic_corpus_is_refused_without_the_flag(self):
+        with self.assertRaises(ValueError):
+            Co.load(Path(__file__).parent / "golden" / "corpus_fixture.json")
+
     def test_a_malformed_fixture_is_rejected(self):
-        data = Co.load(Path(__file__).parent / "golden" / "corpus_fixture.json")
+        data = Co.load(Path(__file__).parent / "golden" / "corpus_fixture.json",
+                       synthetic=True)
         data["pairs"][0].pop("conditions")
         self.assertTrue(Co.validate(data["pairs"]))
 
@@ -103,7 +109,7 @@ class TestWorkerResume(unittest.TestCase):
         # the worker died; a new process picks the job up
         second = St.Store(path)
         try:
-            self.assertEqual(second.requeue_orphans(), 1)
+            self.assertEqual(second.requeue_orphans(older_than=0), 1)
             resumed = St.Worker(second, "w2").run_once()
             self.assertEqual(resumed["state"], "succeeded")
             self.assertEqual(resumed["attempt"], 2)

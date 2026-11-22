@@ -89,6 +89,69 @@ class TestRetryPolicy(unittest.TestCase):
         self.assertIsNone(self.store.claim("w2"))
 
 
+class TestScheduler(unittest.TestCase):
+    """§17 — concurrency, fairness and backoff, none of which v2.3 had."""
+
+    def setUp(self):
+        self.clock = {"t": 1000.0}
+        self.store = St.Store(":memory:", clock=lambda: self.clock["t"])
+
+    def test_one_tenant_cannot_starve_another(self):
+        # fifty from one tenant, one from another: the single job must not wait
+        # behind all fifty
+        for _ in range(50):
+            self.store.submit("tnt_a", "render")
+        self.store.submit("tnt_b", "render")
+        claimed = [self.store.claim("w1") for _ in range(3)]
+        self.assertIn("tnt_b", [c["tenant_id"] for c in claimed if c])
+
+    def test_a_tenant_is_capped_at_max_per_tenant(self):
+        for _ in range(10):
+            self.store.submit("tnt_a", "render")
+        self.store.claim("w1", max_per_tenant=2)
+        self.store.claim("w2", max_per_tenant=2)
+        self.assertIsNone(self.store.claim("w3", max_per_tenant=2))
+
+    def test_several_workers_drain_a_queue_without_double_claiming(self):
+        ids = [self.store.submit("tnt_a", "render")[0]["id"] for _ in range(6)]
+        workers = [St.Worker(self.store, f"w{i}") for i in range(3)]
+        for _ in range(6):
+            for w in workers:
+                w.run_once()
+        states = [self.store.get("tnt_a", i)["state"] for i in ids]
+        self.assertEqual(states, ["succeeded"] * 6)
+
+    def test_a_retryable_failure_is_backed_off(self):
+        job, _ = self.store.submit("tnt_a", "render")
+        self.store.claim("w1")
+        failed = self.store.fail(job["id"], "TRANSIENT", base_delay=10.0)
+        self.assertGreater(failed["retry_after"], self.clock["t"])
+        # not claimable until the delay elapses
+        self.assertIsNone(self.store.claim("w2"))
+        self.clock["t"] = failed["retry_after"] + 1
+        self.assertIsNotNone(self.store.claim("w2"))
+
+    def test_the_delay_grows_with_each_attempt(self):
+        job, _ = self.store.submit("tnt_a", "render")
+        delays = []
+        for _ in range(2):
+            self.store.claim("w1")
+            row = self.store.fail(job["id"], "TRANSIENT", base_delay=10.0)
+            delays.append(row["retry_after"] - self.clock["t"])
+            self.clock["t"] = row["retry_after"] + 1
+        self.assertGreater(delays[1], delays[0])
+
+    def test_jitter_differs_between_jobs(self):
+        # two jobs failing at the same instant must not retry at the same instant
+        a, _ = self.store.submit("tnt_a", "render")
+        b, _ = self.store.submit("tnt_b", "render")
+        self.store.claim("w1")
+        self.store.claim("w2")
+        ra = self.store.fail(a["id"], "TRANSIENT", base_delay=10.0)["retry_after"]
+        rb = self.store.fail(b["id"], "TRANSIENT", base_delay=10.0)["retry_after"]
+        self.assertNotEqual(ra, rb)
+
+
 class TestWorker(unittest.TestCase):
     def setUp(self):
         self.store = St.Store(":memory:")
@@ -104,10 +167,19 @@ class TestWorker(unittest.TestCase):
         job, _ = self.store.submit("tnt_a", "render")
         claimed = self.store.claim("w1")
         self.store.checkpoint(claimed["id"], 2)
-        self.assertEqual(self.store.requeue_orphans(), 1)
+        # the lease has expired: a worker that has not renewed is presumed dead
+        self.assertEqual(self.store.requeue_orphans(older_than=0), 1)
         resumed = St.Worker(self.store, "w2").run_once()
         self.assertEqual(resumed["state"], "succeeded")
         self.assertEqual(resumed["attempt"], 2)
+
+    def test_a_live_claim_is_not_requeued(self):
+        # v2.2 defaulted the lease to zero, so every sweep requeued every
+        # running job — including one a live worker was rendering, which lets
+        # two workers write the same output
+        self.store.submit("tnt_a", "render")
+        self.store.claim("w1")
+        self.assertEqual(self.store.requeue_orphans(), 0)
 
     def test_two_workers_cannot_claim_one_job(self):
         self.store.submit("tnt_a", "render")

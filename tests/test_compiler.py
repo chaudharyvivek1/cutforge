@@ -10,7 +10,6 @@ from fractions import Fraction as F
 from pathlib import Path
 
 import compiler
-import spec_rules as R
 
 FPS_2997 = F(30000, 1001)
 

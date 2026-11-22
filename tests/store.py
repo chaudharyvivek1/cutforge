@@ -17,7 +17,10 @@ import time
 import uuid
 from contextlib import contextmanager
 
-TERMINAL = ("succeeded", "failed", "cancelled", "expired", "quarantined")
+# The states no transition leaves. `expired` was in this tuple from v2.2 and
+# nothing ever set it — §8.5 says an unanswered hold expires *as failed*, so a
+# seventh terminal state was a state with no path to it.
+TERMINAL = ("succeeded", "failed", "cancelled", "quarantined")
 
 # §18: the retry policy is keyed to the failure class, not to a counter alone.
 RETRYABLE = {
@@ -46,6 +49,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   hold_deadline   REAL,
   claimed_by      TEXT,
   claimed_at      REAL,
+  retry_after     REAL NOT NULL DEFAULT 0,
   updated_at      REAL NOT NULL,
   UNIQUE (tenant_id, idempotency_key)
 );
@@ -89,21 +93,33 @@ class Store:
                  json.dumps(payload or {}), self.clock()))
             return dict(db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()), True
 
-    def claim(self, worker):
-        """Take one queued job exclusively. Two workers cannot claim the same job."""
+    def claim(self, worker, max_per_tenant=2):
+        """Take one due job, fairly.
+
+        Two rules, both of which v2.3 lacked. A job is not claimable before its
+        `retry_after` — that is backoff — and a tenant may not hold more than
+        `max_per_tenant` running jobs, which is what stops one tenant's fifty
+        submissions starving another's one. Without the second rule the queue
+        is first-in-first-out and a bulk uploader owns it.
+        """
         with self.tx() as db:
-            row = db.execute(
-                "SELECT * FROM jobs WHERE state='queued' ORDER BY updated_at LIMIT 1"
-            ).fetchone()
-            if not row:
-                return None
-            updated = db.execute(
-                "UPDATE jobs SET state='running', claimed_by=?, claimed_at=?, updated_at=?"
-                " WHERE id=? AND state='queued'",
-                (worker, self.clock(), self.clock(), row["id"])).rowcount
-            if updated != 1:
-                return None                     # somebody else won the race
-            return dict(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
+            busy = {r["tenant_id"]: r["n"] for r in db.execute(
+                "SELECT tenant_id, COUNT(*) AS n FROM jobs WHERE state='running'"
+                " GROUP BY tenant_id")}
+            rows = db.execute(
+                "SELECT * FROM jobs WHERE state='queued' AND retry_after<=?"
+                " ORDER BY updated_at LIMIT 200", (self.clock(),)).fetchall()
+            for row in rows:
+                if busy.get(row["tenant_id"], 0) >= max_per_tenant:
+                    continue
+                updated = db.execute(
+                    "UPDATE jobs SET state='running', claimed_by=?, claimed_at=?,"
+                    " updated_at=? WHERE id=? AND state='queued'",
+                    (worker, self.clock(), self.clock(), row["id"])).rowcount
+                if updated == 1:
+                    return dict(db.execute("SELECT * FROM jobs WHERE id=?",
+                                           (row["id"],)).fetchone())
+            return None
 
     def transition(self, job_id, state, **fields):
         """Move a job, unless it is terminal — terminal states are final."""
@@ -129,12 +145,15 @@ class Store:
             db.execute("UPDATE jobs SET segments_done=?, updated_at=? WHERE id=?",
                        (segments_done, self.clock(), job_id))
 
-    def fail(self, job_id, code, attempt_ceiling=MAX_ATTEMPTS):
-        """Retry by failure class, then quarantine (§18).
+    def fail(self, job_id, code, attempt_ceiling=MAX_ATTEMPTS, base_delay=1.0):
+        """Retry by failure class, with backoff, then quarantine (§18).
 
         A job that fails identically three times is poison: retrying it is a
-        loop that costs money and never succeeds, which is the failure the
-        class exists to prevent.
+        loop that costs money and never succeeds, which is the class exists to
+        prevent. A retryable failure is scheduled at `base_delay * 2^(n-1)`
+        plus a jitter derived from the job id, so two jobs that failed at the
+        same moment do not retry at the same moment and knock over a
+        dependency that was just recovering.
         """
         with self.tx() as db:
             row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
@@ -143,10 +162,12 @@ class Store:
             retryable = RETRYABLE.get(code, False)
             attempts = row["attempt"]
             if retryable and attempts < attempt_ceiling:
+                delay = base_delay * (2 ** (attempts - 1))
+                jitter = (hash(row["id"]) % 1000) / 1000.0 * delay * 0.5
                 db.execute(
                     "UPDATE jobs SET state='queued', attempt=attempt+1, error=?,"
-                    " claimed_by=NULL, updated_at=? WHERE id=?",
-                    (code, self.clock(), job_id))
+                    " retry_after=?, claimed_by=NULL, updated_at=? WHERE id=?",
+                    (code, self.clock() + delay + jitter, self.clock(), job_id))
             elif retryable:
                 db.execute(
                     "UPDATE jobs SET state='quarantined', error='POISON',"
@@ -166,8 +187,14 @@ class Store:
                 f" WHERE id=? AND state NOT IN ({placeholders})",
                 (state, error, self.clock(), job_id, *TERMINAL))
 
-    def requeue_orphans(self, older_than=0.0):
-        """A worker that died leaves a running job; put it back."""
+    def requeue_orphans(self, older_than=30.0):
+        """A worker that died leaves a running job; put it back.
+
+        The lease matters. v2.2 defaulted this to zero, which requeued every
+        running job on every sweep — including the ones a live worker was
+        rendering, so two workers could render the same job and both write.
+        Thirty seconds is the lease a heartbeat is expected to renew.
+        """
         with self.tx() as db:
             cutoff = self.clock() - older_than
             return db.execute(

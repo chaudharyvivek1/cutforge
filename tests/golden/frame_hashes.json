@@ -13,6 +13,7 @@
   "audio_transition": {
     "build": "ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers",
     "ffmpeg": "n9.0.2",
+    "samples": 941741,
     "sha256": "9fdf177e95c3e22e5952283361c250ebe500a00acc50650b67bbf358f8e42d2b"
   },
   "cut": {

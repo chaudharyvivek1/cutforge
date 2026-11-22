@@ -59,14 +59,17 @@ class TestRender(unittest.TestCase):
         self.assertEqual(first, second)
 
     def test_the_graph_and_the_pixels_agree_on_length(self):
-        # 24 + 24 frames at 24 fps, less the dissolve's overlap in the second case
-        raw = R.render_raw(SIMPLE, [self.a, self.b])
-        frames = len(raw) and None
-        import subprocess
-        cmd = [R.FFMPEG, "-y", "-loglevel", "error", "-i", str(self.a), "-i", str(self.b),
-               "-filter_complex", SIMPLE, "-map", "[v_out]", "-f", "null", "-"]
-        err = subprocess.run(cmd, capture_output=True).stderr.decode()
-        self.assertIn("frame=", err + "frame=")   # ffmpeg reports frames on stderr
+        # v2.1 asserted that ffmpeg mentioned "frame=" on stderr, which is true
+        # of every run including a broken one. This counts the frames instead.
+        raw = R.render_bytes(SIMPLE, [self.a, self.b])
+        frames = len(raw) // (320 * 180 * 3 // 2)          # yuv420p
+        self.assertEqual(frames, 48)                        # 24 + 24
+
+    def test_a_dissolve_costs_its_overlap(self):
+        # §5.7: a transition consumes record time, so the output is shorter
+        raw = R.render_bytes(DISSOLVE, [self.a, self.b])
+        frames = len(raw) // (320 * 180 * 3 // 2)
+        self.assertEqual(frames, 36)                        # 48 - 12 at 24 fps
 
     def test_a_broken_graph_fails_loudly(self):
         with self.assertRaises(RuntimeError):
@@ -127,7 +130,11 @@ class TestCompilerFixturesRender(unittest.TestCase):
             import spec_rules as SR
             expected = SR.samples_for(588, F(30000, 1001))
         self.assertEqual(samples, expected)
-        self.assertLessEqual(abs(samples - expected), 1)
+        # a fade at the wrong offset produces the same length, so pin content too
+        import hashlib
+        digest = hashlib.sha256(raw).hexdigest()
+        recorded = self._recorded("audio_transition")
+        self.assertEqual(digest, recorded["sha256"])
 
     def test_the_audio_bus_renders(self):
         graph = C.compile_ir(C.audio_only_ir())

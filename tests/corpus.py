@@ -43,9 +43,18 @@ def validate(entries):
     return problems
 
 
-def load(path):
+def load(path, synthetic=False):
+    """Load a corpus, and refuse to pretend a synthetic one is a measurement.
+
+    v2.3 committed a synthetic fixture with a note in its first line, which is
+    the kind of warning a reader skims past and then quotes. The flag puts the
+    distinction in the signature instead of in a comment.
+    """
     data = json.loads(Path(path).read_text())
     problems = validate(data.get("pairs", []))
     if problems:
         raise ValueError("; ".join(problems))
+    if data.get("synthetic") and not synthetic:
+        raise ValueError("this corpus is synthetic; pass synthetic=True and do not "
+                         "quote its rates as accuracy")
     return data

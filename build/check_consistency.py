@@ -134,11 +134,17 @@ def main():
     # ------------------------------------- the §0 caption names its own review
     # v1.5 shipped a table captioned "Fourth-review findings" because the
     # caption was replaced separately from the rows and only one of them moved.
-    ORDINALS = {0: "Tenth", 4: "Fourth", 5: "Fifth", 6: "Sixth", 7: "Seventh",
-                8: "Eighth", 9: "Ninth", 10: "Tenth", 11: "Eleventh"}
+    # Keyed on the full version, not the minor digit. v1.0 was the draft, so
+    # v1.1 is the first review and v2.4 the fourteenth; a map keyed on "4"
+    # called 2.4 the fourth.
+    ORDINALS = {
+        "1.1": "First", "1.2": "Second", "1.3": "Third", "1.4": "Fourth",
+        "1.5": "Fifth", "1.6": "Sixth", "1.7": "Seventh", "1.8": "Eighth",
+        "1.9": "Ninth", "2.0": "Tenth", "2.1": "Eleventh",
+        "2.2": "Twelfth", "2.3": "Thirteenth", "2.4": "Fourteenth",
+    }
     if version:
-        minor = int(version.split(".")[1])
-        want = ORDINALS.get(minor)
+        want = ORDINALS.get(version)
         if want:
             cap = re.search(r"Table 0  \|  (\w+)-review findings", text)
             if not cap:

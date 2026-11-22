@@ -72,10 +72,6 @@ def plan_duration_frames(plan_doc):
     return plan_doc["structure"][-1]["record"][1] if plan_doc["structure"] else 0
 
 
-def _fps(value):
-    return F(value) if not isinstance(value, F) else value
-
-
 def validate(plan_doc, fps):
     """The checks §7.4 runs before a preview is worth spending GPU on."""
     fps = _fps(fps)

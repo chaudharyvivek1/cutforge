@@ -117,6 +117,29 @@ def main():
         for name in sorted(rls_names - set(tables)):
             fail(f"RLS loop names {name}, which is not created by this migration")
 
+    # §18: the DDL's state list must match the states the code actually uses.
+    # v2.3 added `quarantined` to the store and not to this CHECK, which a real
+    # Postgres would have rejected — the drift this repository keeps finding.
+    states = set()
+    for m in re.finditer(r"state\s+text\s+NOT NULL CHECK \(state IN \(([^)]*)\)\)", sql, re.S):
+        states |= set(re.findall(r"'([a-z_]+)'", m.group(1)))
+    if not states:
+        fail("jobs.state CHECK not found")
+    else:
+        try:
+            import sys as _sys
+            _sys.path.insert(0, str(Path("tests")))
+            import store as _store
+            used = set(_store.TERMINAL) | {"queued", "running", "awaiting_input", "verifying"}
+            missing = used - states
+            if missing:
+                fail(f"jobs.state CHECK is missing {sorted(missing)} — the code uses them")
+            extra = states - used
+            if extra:
+                fail(f"jobs.state CHECK allows {sorted(extra)}, which no code path sets")
+        except ImportError:
+            pass
+
     # §16.6.1: the erasure table must carry the jurisdiction it looks deadlines up by
     if "erasures" in tables:
         body = tables["erasures"]

@@ -19,7 +19,8 @@ Each version is a full standalone specification answering one external technical
 | v1.6 | Sixth technical review | "Rules right; now run them" | A 29-test conformance suite (`tests/`), audio handles to the sample (§5.7), the VFR map under speed (§5.9.5), one duration field instead of two (§6.2), jurisdictional erasure deadlines (§16.6.1), tiered egress (§20.3) |
 | v1.7 | Seventh technical review | "Rules executed; now prove the translation" | A reference compiler under golden files (§19.1), the VFR threshold either side (§5.4), the erasure schema (§13.3, §16.6.1), `speed` bounded in the schema (§6.4), the 95th-percentile example (§20.3), and a static migration check (§13.5) |
 | v1.8 | Eighth technical review | "Rules and translation proved; now the artefact" | Five golden graphs (§19.1), a byte-reproducible build (§11.6), a round-trip test, a rendered-page check, the commitment break-even (§20.3), and 16× stated as four stages (§5.11) |
-| v1.9 | *Not started* | — | The six open findings in `docs/reviews/v1.9-candidates.md` |
+| v1.9 | Ninth technical review | "Rules and artefact proved; now the implementation" | LUTs compiled (§11.4), colour in both directions (§12.6), a mixed audio bus (§11.1), golden provenance (§19.1), the break-even as a formula (§20.3), and a layout check that cannot pass by skipping |
+| v2.0 | *Not started* | — | The six open findings in `docs/reviews/v2.0-candidates.md` — all of them the distance to a working renderer |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -168,6 +169,25 @@ v1.8 is about the artefact. Three of the last four versions shipped a defect tha
 
 **The proportion has shifted.** v1.6 and v1.7 closed defects — wrong rules, wrong code. v1.8 closed the distance between a document and its artefact. Four of the six remaining findings are verification debt: the rule is right and the reference implementation does not yet reach it. That is a different kind of unfinished, and the list says so rather than calling everything a bug.
 
+## 2g. The v1.9 round
+
+v1.9 is the first version where the list contained nothing but verification debt — the rule was right and the reference implementation had not reached it. The work was therefore mostly code, and two of the six were real bugs rather than coverage.
+
+| # | Commit | What it did |
+|---|---|---|
+| 58 | `feat(test): colour in both directions, LUTs, and a mixed audio bus` | `lut3d`, an inverse map for SDR-on-HDR, tone-map settings from the manifest, `amix` + `loudnorm` |
+| 59 | `test: three more goldens and a provenance table` | `lut`, `audio_mix`, `sdr_to_hdr`, and `tests/golden/README.md` with a test that keeps it complete |
+| 60 | `ci: fail when the layout job skips` | The skip reason names what did not run, and the job greps for it |
+| 61 | `docs(spec): add the v1.9 source` | 21 anchored edits |
+| 62 | `docs(spec): build v1.9 and archive v1.8` | 61 pages, 43 tables, 85 tests |
+| 63 | `docs: release notes for v1.9` | Changelog, version line, this section |
+
+**The audio bug was the one worth catching.** v1.8's compiler emitted one chain per audio item and never mixed them, so a timeline with a music bed and dialogue produced two streams and the renderer would take the first. That ships as "the music is missing" and gets diagnosed as a file problem. The fix is four lines and the test is a two-track fixture — but nothing would have found it without a fixture that had two tracks, which is the same lesson as the Appendix A compiler test one version earlier.
+
+**The tone-map constants were the second.** `_tonemap` held `hable` and 100 nits as literals, which contradicts the reason §11.6 records them: a render is reproducible only if the tone map it used is recorded, and a constant in the compiler is not a record. The settings now come from `metadata.tonemap`, and a test asserts the manifest wins.
+
+**Where the repository now stands.** The document has no known contradiction in it, the tooling proves the document, and the reference implementation reaches the filter graph. What it does not reach is a pixel. That is the whole of the v2.0 list, and it is the right next thing: eight golden graphs prove that the compiler says what it means, and nothing yet proves that ffmpeg does what the graph says.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -188,14 +208,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| Colour management and LUTs are specified and not compiled | `reviews/v1.9-candidates.md` §1 | Any IR carrying a `lut` effect — it raises rather than rendering |
-| The layout check skips silently without LibreOffice | §2 | A contributor's machine reporting success while running nothing |
-| The golden files have no reviewer | §3 | Knowing why a graph changed, not just that it did |
-| The break-even uses one rate for committed capacity | §4 | Pricing at any other commitment rate |
-| `_tonemap` assumes an SDR project and an HLG or PQ source | §5 | SDR source on an HDR timeline |
-| The compiler emits no `amix` for a multi-track audio bus | §6 | Any timeline with music and dialogue |
+| No pixels are ever produced | `reviews/v2.0-candidates.md` §1 | Every semantic guarantee the compiler makes |
+| Working-space colour and per-shot matching are not compiled | §2 | Any IR needing colour management |
+| The planner and repair loop have no reference implementation | §3 | The 80%-first-attempt target |
+| The identity path has no reference implementation | §4 | The hold state machine, before any biometrics |
+| OTIO export and Remotion overlays are specified and not compiled | §5 | Professional handoff and designed graphics |
+| The layout check runs on main only | §6 | A pull request that breaks the layout |
 
-Nothing in that list is architectural. Four are verification debt — the rule is right and the reference implementation does not yet reach it — and two are consequences of v1.7's own work — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural, and for the first time every item is verification debt — the rule is right and the reference implementation does not yet reach it. The document has no known contradiction in it; what it has is an implementation that stops at the filter graph — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

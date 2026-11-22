@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v1.9 — 22 November 2026
+
+**Basis:** ninth technical review. Four of the six findings were verification debt — the rule was right and the reference implementation had not reached it.
+**Theme:** the implementation catching up. Colour in both directions, a mixed audio bus, and golden files that record why they changed.
+
+| Finding | Resolved by |
+|---|---|
+| Colour management and LUTs were specified and not compiled | `lut` compiles to `lut3d` with the file as a manifest reference, never a path, and a golden proves the chain and its ordering. Working-space conversion remains unimplemented and is named |
+| The layout check skipped silently without LibreOffice | The skip names what did not run, and the CI job fails if the layout tests skip rather than execute |
+| The golden files had no reviewer | `tests/golden/README.md` records the fixture, approving version and last change per file; a test fails if a golden is undocumented |
+| The break-even used one rate for committed capacity | §20.3 states it as `g* = 1000 + (provisioned × R_c − 90) / 0.05`, linear in the peak, with the worked point as one instance |
+| `_tonemap` assumed an SDR project and an HLG or PQ source | Both directions implemented; operator, reference white and desaturation read from `metadata.tonemap` |
+| The compiler emitted no `amix` for a multi-track bus | `amix` with `normalize=0` and `loudnorm`, skipped for a single track, with a two-track fixture and golden |
+
+Also: 91 figure assertions, 85 tests, eight golden graphs. The audio bug is worth naming: v1.8's compiler produced one stream per audio track and never mixed them, so music and dialogue would have shipped as whichever stream the renderer took first.
+
+**Still open after v1.9:** six findings, in `docs/reviews/v2.0-candidates.md` — all verification debt, and the first list with nothing else.
+
+---
+
 ## v1.8 — 22 November 2026
 
 **Basis:** eighth technical review, and the first look at the artefact rather than the source.

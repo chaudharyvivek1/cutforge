@@ -81,3 +81,16 @@ def load_hashes(path):
 
 def save_hashes(path, data):
     Path(path).write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+
+
+def render_audio(graph, inputs):
+    """Hash the decoded audio, which frame hashes cannot speak for (§11.5)."""
+    cmd = [FFMPEG, "-y", "-loglevel", "error"]
+    for path in inputs:
+        cmd += ["-i", str(path)]
+    cmd += ["-filter_complex", graph, "-map", "[a_mix]",
+            "-f", "s16le", "-ac", "2", "-ar", "48000", "-"]
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.decode()[-800:])
+    return hashlib.sha256(result.stdout).hexdigest()

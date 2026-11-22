@@ -75,3 +75,58 @@ class TestRender(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+@unittest.skipUnless(R.available(), "ffmpeg is not installed — NO FRAMES WERE RENDERED")
+class TestCompilerFixturesRender(unittest.TestCase):
+    """The compiler's own fixtures, rendered.
+
+    v2.0 hashed two graphs written as string literals, which proves that *a*
+    graph renders identically and says nothing about the graph the compiler
+    emits. These compile the fixtures and render them, so the golden graph and
+    the golden hash describe the same artefact.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        import assets
+        cls.tmp = Path(tempfile.mkdtemp())
+        cls.a = assets.appendix_a_assets(cls.tmp)
+        cls.music = assets.audio(cls.tmp / "music.wav", tone=440)
+        cls.dialogue = assets.audio(cls.tmp / "dialogue.wav", tone=660)
+        cls.hashes = R.load_hashes(HASHES)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def _recorded(self, name):
+        recorded = self.hashes.get(name)
+        self.assertIsNotNone(recorded, f"no golden hash for {name}")
+        if recorded["ffmpeg"] != R.major():
+            self.skipTest(f"ffmpeg {recorded['ffmpeg']} recorded, {R.major()} running")
+        return recorded
+
+    def test_appendix_a_renders_from_the_compilers_own_graph(self):
+        ir = C.appendix_a_ir()
+        ir["project"]["resolution"] = [180, 320]      # small, for speed
+        graph = C.compile_ir(ir)
+        self.assertTrue(graph.rstrip().endswith("[v_out]"))
+        digest = R.render_raw(graph, [self.a[x] for x in
+                                      ["ast_a91", "ast_b07", "ast_c13", "ast_d22"]])
+        self.assertEqual(digest, self._recorded("appendix_a_compiled")["sha256"])
+
+    def test_the_audio_bus_renders(self):
+        graph = C.compile_ir(C.audio_only_ir())
+        digest = R.render_audio(graph, [self.music, self.dialogue])
+        self.assertEqual(digest, self._recorded("audio_mix_compiled")["sha256"])
+
+    def test_the_graph_carries_a_final_label(self):
+        # v2.0 emitted transitions and never joined them: no [v_out] existed
+        for fixture in (C.appendix_a_ir, C.overlay_ir, C.wipe_ir):
+            self.assertIn("[v_out]", C.compile_ir(fixture()))
+
+    def test_a_cut_without_transitions_uses_concat(self):
+        ir = C.appendix_a_ir()
+        ir["sequence"]["tracks"][0]["transitions"] = []
+        self.assertIn("concat=n=2", C.compile_ir(ir))

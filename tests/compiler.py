@@ -51,10 +51,10 @@ def compile_ir(ir):
                 lines.extend(_audio_item(item, fps, ir))
                 labels.append((item["id"], item["record"]["in"]))
 
-    transitions = _transitions(seq, fps)
     graph = ";\n".join(lines)
-    if transitions:
-        graph += ";\n" + transitions
+    assemble = _assemble(seq, fps)
+    if assemble:
+        graph += ";\n" + assemble
 
     bus = _audio_bus(seq)
     if bus:
@@ -205,26 +205,57 @@ def _audio_item(item, fps, ir):
     return [f"[{_input_index(ir, item['asset'])}:a]" + ",".join(chain) + f"[a_{rid}]"]
 
 
-def _transitions(seq, fps):
-    """§5.7: a transition overlaps two clips and consumes record time."""
-    out = []
-    for track in seq["tracks"]:
-        for t in track.get("transitions", []) or []:
-            a, b = t["between"]
-            frames = t["frames"]
-            seconds = float(F(frames) / fps)
-            kind = t.get("type", "dissolve")
-            align = t.get("align", "center")
-            if kind == "wipe":
-                # §5.7: align moves the overlap, and the perceptual cut is its middle
+def _assemble(seq, fps):
+    """Fold the primary video track into one output label.
+
+    v2.0 emitted one xfade per transition and never joined them, so the graph
+    had no `[v_out]` at all — it could not be rendered. Hand-written test
+    graphs hid this for a version; the first render of the compiler's own
+    output found it in a second.
+
+    The fold is left to right: a transition joins the accumulator to the next
+    clip with xfade, and a cut joins them with concat.
+    """
+    track = next((t for t in seq["tracks"]
+                  if t["id"] == seq["primary_video_track"]), None)
+    if track is None:
+        return ""                      # an audio-only timeline has no picture to assemble
+    clips = [i for i in track["items"] if i.get("kind") == "clip"]
+    if not clips:
+        return ""
+    if len(clips) == 1:
+        return f"[v_{clips[0]['id']}]null[v_out]"
+
+    by_pair = {}
+    for t in track.get("transitions", []) or []:
+        a, b = t["between"]
+        by_pair[(a, b)] = t
+
+    lines = []
+    current = f"v_{clips[0]['id']}"
+    step = 0
+    for prev, nxt in zip(clips, clips[1:]):
+        step += 1
+        target = f"v_{nxt['id']}"
+        trans = by_pair.get((prev["id"], nxt["id"]))
+        if trans:
+            seconds = float(F(trans["frames"]) / fps)
+            align = trans.get("align", "center")
+            if trans.get("type") == "wipe":
                 name = {"start": "wipeleft", "end": "wiperight"}.get(align, "wipeleft")
                 offset = {"start": 0.0, "end": seconds / 2, "center": seconds / 4}[align]
             else:
                 name = "fade"
                 offset = 0.0
-            out.append(f"[v_{a}][v_{b}]xfade=transition={name}:duration={seconds:.6f}"
-                       f":offset={offset:.6f}[tr_{a}_{b}]")
-    return ";\n".join(out)
+            out = f"xf_{step}"
+            lines.append(f"[{current}][{target}]xfade=transition={name}"
+                         f":duration={seconds:.6f}:offset={offset:.6f}[{out}]")
+        else:
+            out = f"cc_{step}"
+            lines.append(f"[{current}][{target}]concat=n=2:v=1:a=0[{out}]")
+        current = out
+    lines.append(f"[{current}]null[v_out]")
+    return ";\n".join(lines)
 
 
 def _input_index(ir, asset_id):
@@ -343,3 +374,32 @@ def sdr_to_hdr_ir():
     ir = _base_ir()
     ir["project"]["color_space"] = "rec2020-hlg"
     return ir
+
+
+def audio_only_ir():
+    """Two audio tracks and no picture, so the bus can be rendered alone.
+
+    Rendering the full graph from audio-only inputs fails: ffmpeg still tries
+    to build the video chains, which reference streams that do not exist. A
+    fixture with no picture is the honest way to test the mix.
+    """
+    return {
+        "schema": "timeline/1.9",
+        "project": {"id": "prj_audio", "fps": {"num": "30000", "den": "1001"},
+                    "resolution": [180, 320], "color_space": "rec709"},
+        "sequence": {
+            "id": "seq_audio", "primary_video_track": "V1",
+            "content_duration_frames": 300, "render_duration_frames": 300,
+            "tracks": [
+                {"id": "A1", "kind": "audio", "items": [
+                    {"kind": "clip", "id": "a1", "asset": "mus_01",
+                     "source": {"in_sample": 0, "out_sample": 480480},
+                     "record": {"in": 0, "out": 300}}]},
+                {"id": "A2", "kind": "audio", "items": [
+                    {"kind": "clip", "id": "a2", "asset": "dlg_02",
+                     "source": {"in_sample": 0, "out_sample": 480480},
+                     "record": {"in": 0, "out": 300}}]},
+            ],
+        },
+        "metadata": {"assets": [{"id": "mus_01"}, {"id": "dlg_02"}]},
+    }

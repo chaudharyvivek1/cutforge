@@ -1,4 +1,14 @@
 {
+  "appendix_a_compiled": {
+    "build": "ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg": "n9.0.2",
+    "sha256": "9943dde64c81b5c019cb87eae5d3aa4bbab3f544b0643af23ad47dd74097a6e6"
+  },
+  "audio_mix_compiled": {
+    "build": "ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg": "n9.0.2",
+    "sha256": "e5fca2f4dbd1984f0dbcc90b7df4e1529472298f5baa34e7d7749c9ea95f79ee"
+  },
   "cut": {
     "build": "ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers",
     "ffmpeg": "n9.0.2",

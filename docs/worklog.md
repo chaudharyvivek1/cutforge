@@ -16,7 +16,8 @@ Each version is a full standalone specification answering one external technical
 | v1.3 | Third technical review | "Architecture approved, complete P0 readiness withheld" | Executable contracts: BigInt wire format, complete migration, P010 figures, preview cost, RLS threat model, missing endpoints |
 | v1.4 | Fourth technical review | "Architecture settled; a boundary remained" | The conform map (§5.9), sound that follows its picture (§5.11), remapped captions (§5.10), tolerances in milliseconds (§5.12), op inverses (§6.6), reconciled unit economics (§12.11), erasure propagation (§16.6), asset provenance (§6.8) |
 | v1.5 | Fifth technical review | "Rules right; edge cases untested" | VFR map proved (§5.9.4), atempo to the sample (§5.11), transition handles at speed (§5.7), tempo grids that scale (§5.10), erasure release paths (§16.6.1), storage and egress costed (§20.3) |
-| v1.6 | *Not started* | — | The six open findings in `docs/reviews/v1.6-candidates.md` |
+| v1.6 | Sixth technical review | "Rules right; now run them" | A 29-test conformance suite (`tests/`), audio handles to the sample (§5.7), the VFR map under speed (§5.9.5), one duration field instead of two (§6.2), jurisdictional erasure deadlines (§16.6.1), tiered egress (§20.3) |
+| v1.7 | *Not started* | — | The six open findings in `docs/reviews/v1.7-candidates.md` |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -95,6 +96,31 @@ The work was 27 anchored edits to the v1.4 source, then renumbering, then 28 new
 
 That is the second time a figure check has found an error in the sentence it was written to support rather than in the number. The first was Python's `round()` being half-to-even.
 
+## 2d. The v1.6 round
+
+v1.6 is the first version with an executable counterpart. Two things drove it: the document asserts behaviour and nothing executed it, and the sixth review asked for the fixture §5.9.4 had named but never produced.
+
+`tests/` is deliberately not the engine. It is the smallest code that can be wrong in the same way the document can be — exact rationals, both conform maps, the speed cascade, the handle conversions, the source-to-record transform, the duration ladder, the erasure deadline, tiered egress — and 29 tests that assert every worked example in the document, each naming its section.
+
+| # | Commit | What it did |
+|---|---|---|
+| 34 | `test: add the conformance suite` | `spec_rules.py`, `test_conformance.py`, `vfr_fixture.py` — 29 tests, no dependencies, under a quarter of a second |
+| 35 | `docs(spec): add the v1.6 source` | 28 anchored edits; two new subsections (§5.9.5, §19.1) |
+| 36 | `build: extend both checkers` | 85 figure assertions; four consistency checks including code-fence balance |
+| 37 | `docs(spec): build v1.6 and archive v1.5` | 59 pages, 43 tables |
+| 38 | `docs(review): v1.7 candidates` | Six findings, three created by this version |
+| 39 | `docs: release notes for v1.6` | Changelog, version line, reading order, this section |
+
+**Three defects the suite and the render caught, in the order they appeared.**
+
+The audio handle rule was invisible until a test converted the same boundary twice: `samplesFor(12)` is 19,219 and `2 × samplesFor(6)` is 19,220. One sample, one truncated fade, no error. §5.7 now states the rule and the test asserts both numbers, so a future simplification that reintroduces the double rounding breaks a test rather than a render.
+
+An insertion in §5.7 closed one code fence and opened another without consuming the original closing fence. The document still parsed as markdown; the build produced nine tables instead of forty-three, and every page after that point rendered as monospace. The consistency checker now fails on an unbalanced fence, and on a "code" block that contains a heading — the precise signature of a fence that went missing.
+
+The §0 caption had been reading "Fourth-review findings" since v1.5, because the caption and the rows were replaced by separate edits and only one of them moved. The checker now derives the expected ordinal from the version number.
+
+**One test expectation was wrong and one claim was imprecise.** A duration-ladder case labelled "-2.0%" was actually 2.0015% and belonged in the repair band; and the precision rule quoted a specific ratio's drift (3.7 is exact at two decimals, so it drifts zero) where it needed the bound — 10⁻ᵈ × N samples. Both are recorded because they are the same lesson: a test that agrees with a wrong number is worse than no test.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -115,14 +141,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| Audio transition handles on a sped clip are unstated | `reviews/v1.6-candidates.md` §1 | Acrossfades against stretched clips |
-| A table-backed map under speed is walked non-uniformly | §2 | VFR plus speed, the combination of two v1.5 fixes |
-| `render_duration_frames` and `include_trailing_audio` overlap | §3 | Two fields describing one decision |
-| Erasure deadlines have no jurisdictional basis | §4 | Any promise made to a regulator |
-| The VFR corpus fixture is specified and not built | §5 | Verification debt; no code depends on it yet |
-| Egress is priced at one flat rate | §6 | Delivery economics at volume |
+| The conformance suite covers the rules, not the compiler or the planner | `reviews/v1.7-candidates.md` §1 | The two largest surfaces in the system |
+| The `jurisdiction` field is named and not specified | §2 | Any erasure deadline that depends on it |
+| Nothing runs the tests automatically | §3 | Verification that happens while someone remembers |
+| The VFR fixture never sits near the 1% threshold | §4 | The boundary between CFR and VFR |
+| `speed` bounds live only in the validator | §5 | Failing at parse rather than after it |
+| The CDN commitment is mentioned and unpriced | §6 | Delivery economics for a spiky workload |
 
-Nothing in that list is architectural, and two of the six are verification debt rather than defects — the rule is right and nothing exercises it. That distinction matters operationally: a rule that is wrong needs a version, a rule that is unexercised needs a fixture.
+Nothing in that list is architectural. Three of the six are verification debt rather than defects, and three were created by v1.6's own work — a ratio that has held since v1.4, and the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

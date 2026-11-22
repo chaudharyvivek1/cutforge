@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v1.6 — 22 November 2026
+
+**Basis:** sixth technical review, plus the first executable counterpart to the document.
+**Theme:** the rules executed. A conformance suite now implements the deterministic rules and asserts every worked example; the six findings are what it and the review turned up.
+
+| Finding | Resolved by |
+|---|---|
+| Audio transition handles on a sped clip were unstated | §5.7 gives the samples-domain rule: the handle is a record boundary converted once, never a rounded half-handle doubled. Worked: 19,219 samples, not 19,220 |
+| A table-backed map under speed was walked non-uniformly | §5.9.5 fixes the order — record, ÷ speed, conformed, table, source timestamp — and works the 2× walk, which visits f0, f2, f3, f5 and skips f1 and f4 |
+| `render_duration_frames` and `include_trailing_audio` overlapped | §6.2 makes the duration authoritative and the boolean derived; §6.4 and §13.3 drop the stored column; §6.5 asserts the derivation |
+| Erasure deadlines were asserted without a jurisdictional basis | §16.6.1 states them as defaults and adds a `jurisdiction` field, so the deadline is a function of one |
+| The VFR corpus fixture was specified and not built | `tests/vfr_fixture.py` generates it deterministically from a seed, and §5.9.4 points at it |
+| Egress was priced at one flat rate | §20.3 gives two tiers and the blended rate: $90 for the first terabyte, $0.05 above, $63.33 per terabyte at three |
+
+Also: `tests/` — a reference implementation of the deterministic rules (`spec_rules.py`) and 29 conformance tests (`test_conformance.py`), one per rule, each naming its section. The figure checker grew to 85 assertions and the consistency checker gained four: the §0 caption must name its own review, a derived field must not be stored, code fences must balance, and no script may point at a missing file.
+
+**Still open after v1.6:** six findings, in `docs/reviews/v1.7-candidates.md`, three of them created by v1.6's own work.
+
+---
+
 ## v1.5 — 22 November 2026
 
 **Basis:** fifth technical review. Verdict: the rules are right; the cases at their edges are untested.

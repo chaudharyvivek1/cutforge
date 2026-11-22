@@ -38,15 +38,15 @@ docs/
   README.md                                  index: every document and who should read it
   worklog.md                                 how the repo was built, step by step, and what is open
   spec/
-    AI_Video_Editor_Architecture_v1.5.docx   canonical artefact of record
-    v1.5.md                                  source of record, from which the .docx is built
+    AI_Video_Editor_Architecture_v1.6.docx   canonical artefact of record
+    v1.6.md                                  source of record, from which the .docx is built
     figures/                                 figures extracted from the document
   engine/
     01-platform-map.md                       where this engine sits, and what it talks to
     02-engine-contract.md                    the interface the platform may depend on
   reviews/
-    v1.6-candidates.md                       open findings the next version must close
-archive/                                     v1.0 through v1.4, superseded
+    v1.7-candidates.md                       open findings the next version must close
+archive/                                     v1.0 through v1.5, superseded
 build/
   build_docx.py                              markdown → styled .docx, house style
   extract_spec.py                            docx → markdown, for round-trip verification
@@ -63,7 +63,7 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 
 **Two hours, to review the design.** §5 (time and frame model), §6 (the IR) and §11 (the render engine). Those three sections carry almost all the risk. If the time model is wrong, every downstream section inherits the error.
 
-**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v1.6-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
+**A day, to build against it.** The whole of §13 (data model), §14 (multi-tenancy), §15 (API) and Appendix B (tool schemas), plus `docs/reviews/v1.7-candidates.md`. The candidates list is where the specification is still soft, and it is deliberately kept separate so that the spec never claims more than it has earned.
 
 ## Version history
 
@@ -75,7 +75,8 @@ CONTRIBUTING.md                              how a version is cut, how a finding
 | v1.3 | Third technical review | Executable contracts: BigInt wire format, complete migration, P010 figures, preview cost, RLS threat model, endpoints |
 | v1.4 | Fourth technical review | The conform map, speed that carries its audio, remapped captions, reconciled unit economics, erasure propagation |
 | v1.5 | Fifth technical review | The edge cases: VFR proved, atempo to the sample, transition handles at speed, tempo grids that scale, erasure release, storage and egress costed |
-| v1.6 | *Not started* | The six open findings in `docs/reviews/v1.6-candidates.md` |
+| v1.6 | Sixth technical review | The rules executed: a 29-test conformance suite, audio handles to the sample, the VFR map under speed, one duration field instead of two |
+| v1.7 | *Not started* | The six open findings in `docs/reviews/v1.7-candidates.md` |
 
 Each version is a full standalone specification, not a patch. A reader should be able to open any one of them and understand the whole system.
 
@@ -90,6 +91,7 @@ Nothing here is legal advice. §16 covers biometric processing, consent and eras
 ```bash
 python build/check_figures.py        # recompute every asserted figure
 python build/check_consistency.py    # versions, enums, counts, numbering
+python -m unittest discover -s tests -t tests   # execute the worked examples
 python build/build_docx.py docs/spec/v1.5.md \
     docs/spec/AI_Video_Editor_Architecture_v1.5.docx docs/spec   # build the document
 ```

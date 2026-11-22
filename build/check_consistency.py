@@ -48,24 +48,39 @@ def main():
     repo = path.resolve().parent.parent.parent
 
     # ---------------------------------------------------------- version strings
+    # The document version and the IR version are different things, and
+    # conflating them was a tooling defect: a document can ship a major
+    # version without breaking the schema. The IR version must be consistent
+    # with itself and stated in the front matter; it need not equal the
+    # document version.
     vm = re.search(r"VERSION (\d+\.\d+)", text)
     version = vm.group(1) if vm else None
     if not version:
         fail("no VERSION string in the eyebrow line")
+
+    stated_ir = re.search(r"\| IR version \| timeline/(\d+\.\d+)", text)
+    ir_versions = set(re.findall(r"timeline/(\d+\.\d+)", text))
+    if not stated_ir:
+        fail("front matter does not state an IR version")
+    elif len(ir_versions) != 1 or ir_versions != {stated_ir.group(1)}:
+        fail(f"IR version drift: front matter says {stated_ir.group(1)}, "
+             f"document uses {sorted(ir_versions)}")
     else:
-        esc = re.escape(version)
+        irv = stated_ir.group(1)
+        esc = re.escape(irv)
         for pattern, label in [
             (rf'"\$id": "https://spec\.example/timeline/{esc}\.json"', "$id"),
             (rf'"schema": \{{ "const": "timeline/{esc}" \}}', "schema const"),
             (rf'"schema": "timeline/{esc}"', "Appendix A schema"),
             (rf"schema: timeline/{esc}\b", "Appendix A validation line"),
-            (rf"v{esc} \(supersedes v\d+\.\d+\)", "front-matter document row"),
         ]:
             if not re.search(pattern, text):
-                fail(f"version {version}: {label} missing or mismatched")
-        for other in set(re.findall(r"timeline/(\d+\.\d+)", text)):
-            if other != version:
-                fail(f"IR version drift: timeline/{other} appears in a {version} document")
+                fail(f"IR {irv}: {label} missing or mismatched")
+
+    if version:
+        esc_v = re.escape(version)
+        if not re.search(rf"v{esc_v} \(supersedes v\d+\.\d+\)", text):
+            fail(f"front-matter document row does not say v{version}")
 
     # ----------------------------------------------------------- count agreement
     stated = re.search(r"(\d+) findings resolved", text)
@@ -119,7 +134,7 @@ def main():
     # ------------------------------------- the §0 caption names its own review
     # v1.5 shipped a table captioned "Fourth-review findings" because the
     # caption was replaced separately from the rows and only one of them moved.
-    ORDINALS = {4: "Fourth", 5: "Fifth", 6: "Sixth", 7: "Seventh",
+    ORDINALS = {0: "Tenth", 4: "Fourth", 5: "Fifth", 6: "Sixth", 7: "Seventh",
                 8: "Eighth", 9: "Ninth", 10: "Tenth", 11: "Eleventh"}
     if version:
         minor = int(version.split(".")[1])

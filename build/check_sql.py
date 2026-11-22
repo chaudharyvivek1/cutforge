@@ -48,14 +48,18 @@ def main():
     end = text.index("```", i)
     sql = text[start + 3:end]
 
-    # the header names a version and it must be this document's version
-    vm = re.search(r"VERSION (\d+\.\d+)", text)
-    version = vm.group(1) if vm else None
+    # The migration belongs to the schema, not to the document: since v2.0 the
+    # two versions are separate, so the header must match the IR version the
+    # front matter states.
+    ir = re.search(r"\| IR version \| timeline/(\d+\.\d+)", text)
+    ir_version = ir.group(1) if ir else None
     hm = re.search(r"schema, v(\d+\.\d+)", sql)
     if not hm:
         fail("migration header does not name a schema version")
-    elif version and hm.group(1) != version:
-        fail(f"migration header says v{hm.group(1)}; the document is v{version}")
+    elif not ir_version:
+        fail("front matter does not state an IR version")
+    elif hm.group(1) != ir_version:
+        fail(f"migration header says v{hm.group(1)}; the IR is v{ir_version}")
 
     # EXTENSION, DO blocks and GRANT are outside sqlglot's grammar; they are
     # valid PostgreSQL and are skipped rather than reported as failures.

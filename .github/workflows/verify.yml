@@ -1,0 +1,40 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the two dependencies the document tooling needs
+        run: pip install --quiet python-docx pymupdf sqlglot
+
+      - name: Every asserted figure, recomputed
+        run: python build/check_figures.py
+
+      - name: Versions, enums, counts, numbering, fences
+        run: python build/check_consistency.py
+
+      - name: The migration parses and keeps its tenant keys
+        run: python build/check_sql.py
+
+      - name: The document's own worked examples, executed
+        run: python -m unittest discover -s tests -t tests -v
+
+      - name: The .docx still matches its source
+        run: |
+          DOCX=$(ls docs/spec/*.docx | sort -V | tail -1)
+          echo "checking $DOCX"
+          python build/extract_spec.py "$DOCX" /tmp/roundtrip.md /tmp/figs
+          python build/check_figures.py /tmp/roundtrip.md
+          python build/check_consistency.py /tmp/roundtrip.md

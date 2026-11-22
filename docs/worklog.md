@@ -22,7 +22,8 @@ Each version is a full standalone specification answering one external technical
 | v1.9 | Ninth technical review | "Rules and artefact proved; now the implementation" | LUTs compiled (§11.4), colour in both directions (§12.6), a mixed audio bus (§11.1), golden provenance (§19.1), the break-even as a formula (§20.3), and a layout check that cannot pass by skipping |
 | v2.0 | Tenth technical review | "The rules are right; now produce a frame" | A renderer under frame hashes (§19.1), the template planner (§7.6), the identity state machine (§8.5), an OTIO round trip (§11.7), colour in both directions (§11.4), and document/IR versions separated |
 | v2.1 | Eleventh technical review | "The engine must run, not just compile" | A job service (§15, §17, §18), the repair loop (§7.4), the compiler's own fixtures rendered (§19.1), accuracy and colour harnesses (§8.6, §11.4), and §11.7 narrowed to what is built |
-| v2.2 | *Not started* | — | The six open findings in `docs/reviews/v2.2-candidates.md` — the service has no queue, worker or persistence |
+| v2.2 | Twelfth technical review | "The engine must survive a restart" | A durable store and worker (§18), content-sensitive render fixtures (§19.1), the repair band closed (§7.7), a corpus contract (§8.6), a perceptual fallback (§11.8), and overlays scheduled (§21) |
+| v2.3 | *Not started* | — | The six open findings in `docs/reviews/v2.3-candidates.md` — the service and the worker implement one state machine twice |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -234,6 +235,25 @@ The fix exposed a second thing worth recording. With the fold in place the rende
 
 **Two tolerances became functions.** §8.6's accuracy targets now have a harness that a test can prove is looking at something, and §11.4's colour matching has a number — ΔE 2.0 — with a test that a two per cent gain passes and a twenty per cent one fails.
 
+## 2j. The v2.2 round
+
+v2.2 is the first version whose state survives a process. Everything before it lived in memory, which meant §18's claims about checkpointing and cooperative cancellation were descriptions of a design nobody had run.
+
+| # | Commit | What it did |
+|---|---|---|
+| 81 | `feat(test): a durable job store and a worker that resumes` | SQLite, exclusive claim, per-segment checkpoint, orphan requeue |
+| 82 | `test: make the render fixtures content-sensitive` | Four distinct animated patterns, and a test that swapping inputs changes the hash |
+| 83 | `feat(test): the repair band, the corpus contract and a perceptual fallback` | `plan_short`, `corpus.py`, `renderer.perceptual()` |
+| 84 | `docs(spec): add the v2.2 source` | 17 anchored edits |
+| 85 | `docs(spec): build v2.2 and archive v2.1` | 61 pages, 157 tests |
+| 86 | `docs: release notes for v2.2` | Changelog, version line, this section |
+
+**A fixture that cannot tell its inputs apart is measuring nothing.** v2.1's assets shared two patterns between four clips, so a compiler that swapped two inputs would have produced the same hash — and the hash is the only thing standing between a graph and a silent mis-edit. The fix is four distinct animated patterns, plus a test that asserts swapping two inputs *changes* the hash. That test is worth more than the hash it protects, because it is the one that would notice if the fixture went flat.
+
+**The repair band had never been exercised.** The template planner is correct first time, so `repair.run` only ever saw a structure broken by hand — which proves the control flow and nothing about closing a 3% shortfall. `plan_short()` under-delivers by a known amount, and the validator now flags the repair band rather than only the fallback band: a 3% deficit is exactly what the loop exists for, and a validator that calls it acceptable leaves the loop with nothing to do.
+
+**And the round created its own next finding.** `tests/service.py` still uses the in-memory `JobStore` while `tests/store.py` uses SQLite, so the same state machine now exists twice. That is the pattern this repository has documented since v1.4, stated in one line: *the fix creates the next finding, and the next finding is always a second copy of something that should have one.*
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -254,14 +274,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The service has no queue, no worker and no persistence | `reviews/v2.2-candidates.md` §1 | A worker that dies mid-render; a restart that must not lose a job |
-| The render fixtures use one pattern per asset | §2 | A swapped input or an off-by-one trim changing the hash |
-| The repair loop is tested against a stub planner | §3 | Whether a real plan can be repaired |
-| The Remotion overlay path is still not implemented | §4 | Designed titles and alpha compositing |
-| Identity accuracy has a harness and no corpus | §5 | Any claim about matching quality |
-| The renderer pins one ffmpeg build | §6 | Distinguishing a picture change from a filter change |
+| The worker has no scheduler, concurrency or retry policy | `reviews/v2.3-candidates.md` §1 | A job that crashes the process, which would requeue forever |
+| The render fixtures have no audio transition | §2 | §5.7's audio handle rule meeting ffmpeg |
+| The corpus contract has no data | §3 | The loader and validator running end to end |
+| The perceptual fallback has no golden fingerprint | §4 | Distinguishing a picture change from a build change |
+| Overlays are scheduled and still absent | §5 | Designed titles |
+| The service and the worker implement one state machine twice | §6 | One contract, two copies, free to drift |
 
-Nothing in that list is architectural. Two are consequences of v2.1's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Two are consequences of v2.2's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

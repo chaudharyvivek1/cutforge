@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.2 — 22 November 2026
+
+**Basis:** twelfth technical review.
+**Theme:** the engine survives. A job that outlives its worker, a repair band closed by a real shortfall, and a corpus contract waiting for data.
+
+| Finding | Resolved by |
+|---|---|
+| The service had no queue, worker or persistence | `tests/store.py` — SQLite with an exclusive claim, per-segment checkpoints, orphan requeue and final terminal states; a restart resumes from the checkpoint |
+| The render fixtures used one pattern per asset | Four distinct animated patterns, and a test that swapping two inputs changes the hash |
+| The repair loop was tested against a stub planner | `plan_short()` under-delivers by a known amount; the validator now flags the repair band, and the loop closes it in two attempts |
+| The Remotion path was still absent | §21 schedules it as phase three with an acceptance test, so the spec stops implying a capability and starts scheduling one |
+| Identity accuracy had a harness and no corpus | `tests/corpus.py` — required fields, unique ids, distances in range, and coverage of all four conditions |
+| The renderer could not say what changed across builds | `renderer.perceptual()` — a downscaled greyscale fingerprint and a mean absolute difference |
+
+Also: 157 tests. The durability layer is the first thing in this repository that survives a process.
+
+**Still open after v2.2:** six findings, in `docs/reviews/v2.3-candidates.md`. The sharpest is the last: the service and the worker now implement the same state machine twice.
+
+---
+
 ## v2.1 — 22 November 2026
 
 **Basis:** eleventh technical review.

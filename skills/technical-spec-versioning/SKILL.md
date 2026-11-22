@@ -119,3 +119,11 @@ Across nineteen versions, **every defect was found by executing something** — 
 `scripts/extract_docx.py` — docx to faithful markdown (headings, pipe tables, fenced code by monospace detection, figures extracted to `figures/`). Run it before reading anything.
 
 `scripts/check_figures_template.py` — the shape of a figure-check: compute from first principles, compare to the value the document prints, fail with a list. Copy it into the repo's `build/` and fill it with that document's constants.
+
+## Commit discipline
+
+A version is cut as a sequence of small commits, and a sequence that silently produces three commits instead of seven is worse than one long commit: the history now lies about what changed together.
+
+Stage explicit paths (`git add tests/service.py`, never `git add tests`), fail the whole run when a commit does not land, and count the commits before pushing. The failure this prevents happened five times in one project: a directory-wide `git add` left the next commit with nothing to stage, it exited non-zero, and the remaining steps still ran.
+
+`long-project-workflow/references/commit-discipline.md` has the four failures and the eight rules.

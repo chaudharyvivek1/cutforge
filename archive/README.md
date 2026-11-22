@@ -24,5 +24,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v2.7.docx` | v2.7 | Seventeenth technical review — the dispatcher posts, shared revocation and buckets |
 | `AI_Video_Editor_Architecture_v2.8.docx` | v2.8 | Eighteenth technical review — asset tables and ingest, the conform map produced, shots detected |
 | `AI_Video_Editor_Architecture_v2.9.docx` | v2.9 | Nineteenth technical review — chunked render proved, table-set drift checked, VFR refused |
+| `AI_Video_Editor_Architecture_v2.10.docx` | v2.10 | Twentieth technical review — closed-GOP segments, provider adapter, segment expiry |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

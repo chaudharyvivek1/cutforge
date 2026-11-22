@@ -129,6 +129,25 @@ class TestVFR(unittest.TestCase):
         self.assertEqual([m.to_conformed(n) for n in range(4)], [0, 1, 1, 2])
 
 
+class TestVfrThreshold(unittest.TestCase):
+    """§5.4 — the boundary, which the obvious fixture never touches."""
+
+    def test_just_below_is_constant_rate(self):
+        pts = V.near_threshold(0.9)
+        self.assertAlmostEqual(V.spread(pts), 0.009, places=4)
+        self.assertFalse(V.is_vfr(pts))
+
+    def test_just_above_is_variable_rate(self):
+        pts = V.near_threshold(1.1)
+        self.assertAlmostEqual(V.spread(pts), 0.011, places=4)
+        self.assertTrue(V.is_vfr(pts))
+
+    def test_exactly_at_the_threshold_is_not_vfr(self):
+        # §5.4 says "beyond 1%", so 1.0% is still constant rate.
+        pts = V.near_threshold(1.0)
+        self.assertFalse(V.is_vfr(pts))
+
+
 class TestSpeed(unittest.TestCase):
     """§5.11 — at ratios that do not decompose."""
 

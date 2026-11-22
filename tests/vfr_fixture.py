@@ -60,8 +60,30 @@ def is_vfr(pts, threshold=0.01):
     return spread(pts) > threshold
 
 
+def near_threshold(spread_pct, count=300):
+    """A stream whose worst interval deviates by exactly `spread_pct` percent.
+
+    §5.4 classifies an asset as VFR when the spread exceeds 1% of the nominal
+    interval. A fixture that only produces an obvious 100% spread proves the
+    detector fires; it does not prove where the boundary is. This one sits
+    either side of it, which is what catches a threshold written with the
+    wrong comparison operator — a bug that survives review indefinitely.
+    """
+    deviation = int(round(NOMINAL_US * spread_pct / 100.0))
+    pts = []
+    t = 0
+    for i in range(count):
+        pts.append(t)
+        step = NOMINAL_US + (deviation if i == count // 2 else 0)
+        t += step
+    return pts
+
+
 if __name__ == "__main__":
     pts = generate()
     print(f"{len(pts)} frames, {pts[-1] / 1e6:.2f} s, spread {spread(pts):.1%}, "
           f"VFR={is_vfr(pts)}, reordered equal after sort="
           f"{sorted(reorder(pts)) == sorted(pts)}")
+    for pct in (0.9, 1.1):
+        near = near_threshold(pct)
+        print(f"near threshold {pct}%: spread {spread(near):.2%}, VFR={is_vfr(near)}")

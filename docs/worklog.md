@@ -18,7 +18,8 @@ Each version is a full standalone specification answering one external technical
 | v1.5 | Fifth technical review | "Rules right; edge cases untested" | VFR map proved (§5.9.4), atempo to the sample (§5.11), transition handles at speed (§5.7), tempo grids that scale (§5.10), erasure release paths (§16.6.1), storage and egress costed (§20.3) |
 | v1.6 | Sixth technical review | "Rules right; now run them" | A 29-test conformance suite (`tests/`), audio handles to the sample (§5.7), the VFR map under speed (§5.9.5), one duration field instead of two (§6.2), jurisdictional erasure deadlines (§16.6.1), tiered egress (§20.3) |
 | v1.7 | Seventh technical review | "Rules executed; now prove the translation" | A reference compiler under golden files (§19.1), the VFR threshold either side (§5.4), the erasure schema (§13.3, §16.6.1), `speed` bounded in the schema (§6.4), the 95th-percentile example (§20.3), and a static migration check (§13.5) |
-| v1.8 | *Not started* | — | The six open findings in `docs/reviews/v1.8-candidates.md` |
+| v1.8 | Eighth technical review | "Rules and translation proved; now the artefact" | Five golden graphs (§19.1), a byte-reproducible build (§11.6), a round-trip test, a rendered-page check, the commitment break-even (§20.3), and 16× stated as four stages (§5.11) |
+| v1.9 | *Not started* | — | The six open findings in `docs/reviews/v1.9-candidates.md` |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -149,6 +150,24 @@ And the extractor ended a code block at its first blank line, so every listing w
 
 **The lesson is the same one, one layer out.** v1.6's suite tested the rules and said nothing about the translation. v1.7's compiler tests the translation and says nothing about the packaging. Each layer of checking makes the next layer's absence visible, and the visible absence is always the one that was shipping.
 
+## 2f. The v1.8 round
+
+v1.8 is about the artefact. Three of the last four versions shipped a defect that only a rendered page or a round trip could see — a split table row, a build that produced nine tables instead of forty-three, a caption two versions stale — and each was found by looking rather than by checking. This round turned looking into checking.
+
+| # | Commit | What it did |
+|---|---|---|
+| 50 | `test: extend the compiler to the operations Appendix A omits` | Transform, fade, title, tone-map, wipe alignment; four goldens, nine tests |
+| 51 | `build: make the .docx byte-reproducible` | Normalised package: fixed timestamps, sorted parts |
+| 52 | `test: add the packaging suite` | Round trip, build determinism, rendered page — 10 tests |
+| 53 | `docs(spec): add the v1.8 source` | 15 anchored edits; the break-even, the 16× decision, §19.1 covering the new layers |
+| 54 | `ci: run the layout check on main` | A second job, because LibreOffice costs two minutes |
+| 55 | `docs(spec): build v1.8 and archive v1.7` | 59 pages, 43 tables, 69 tests |
+| 56 | `docs: release notes for v1.8` | Changelog, version line, this section |
+
+**What the new layers found immediately.** The migration checker caught its own header drift — the SQL comment said v1.7 while the document said v1.8, which is the defect that checker was written for, on the first version that used it. And the first golden file had to be regenerated because the wipe work changed `offset=0` to `offset=0.000000`; that is the golden mechanism working as designed, and it is also finding 3 of the v1.9 list, because nothing records *why* a golden changed beyond a commit message.
+
+**The proportion has shifted.** v1.6 and v1.7 closed defects — wrong rules, wrong code. v1.8 closed the distance between a document and its artefact. Four of the six remaining findings are verification debt: the rule is right and the reference implementation does not yet reach it. That is a different kind of unfinished, and the list says so rather than calling everything a bug.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -169,14 +188,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The compiler covers only Appendix A's operations | `reviews/v1.8-candidates.md` §1 | Overlays, colour, captions — the operations with the most parameters |
-| The extractor truncated code blocks for six versions | §2 | Any round-trip claim about a listing |
-| The document build is not checked for determinism | §3 | Telling a content change from a packaging change |
-| The 95th-percentile example uses one rate | §4 | The break-even between commitment and volume pricing |
-| `speedTerm` allows 16 but the cascade may not reach it | §5 | Whether 16× is supported or merely bounded |
-| Nothing renders the document to check its layout | §6 | Split rows, collapsed builds, stale captions |
+| Colour management and LUTs are specified and not compiled | `reviews/v1.9-candidates.md` §1 | Any IR carrying a `lut` effect — it raises rather than rendering |
+| The layout check skips silently without LibreOffice | §2 | A contributor's machine reporting success while running nothing |
+| The golden files have no reviewer | §3 | Knowing why a graph changed, not just that it did |
+| The break-even uses one rate for committed capacity | §4 | Pricing at any other commitment rate |
+| `_tonemap` assumes an SDR project and an HLG or PQ source | §5 | SDR source on an HDR timeline |
+| The compiler emits no `amix` for a multi-track audio bus | §6 | Any timeline with music and dialogue |
 
-Nothing in that list is architectural. Three are verification debt, and two are consequences of v1.7's own work — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Four are verification debt — the rule is right and the reference implementation does not yet reach it — and two are consequences of v1.7's own work — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

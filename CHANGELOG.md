@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v1.8 — 22 November 2026
+
+**Basis:** eighth technical review, and the first look at the artefact rather than the source.
+**Theme:** the artefact tested. A compiler under five golden files, a build that reproduces byte for byte, and a layout check that reads the rendered page.
+
+| Finding | Resolved by |
+|---|---|
+| The compiler covered only Appendix A's operations | `tests/compiler.py` gains transform, fade, title, tone-map and wipe alignment; four new goldens, nine new tests. An unimplemented effect raises rather than being skipped |
+| The extractor truncated code blocks for six versions | `tests/test_packaging.py` asserts fenced blocks, `CREATE TABLE` counts, captions and figure strings survive the round trip, and that the migration is not truncated |
+| The document build was not checked for determinism | `build_docx.py` normalises the package — fixed timestamps, sorted parts — and a test asserts two builds are byte-identical |
+| Nothing rendered the document to check its layout | A layout smoke test renders to PDF and asserts page count, no blank pages, the running header and that the migration rendered |
+| The 95th-percentile example used one rate | §20.3 adds the break-even: $155.52 committed against volume pricing crossing at 2,310 GB |
+| `speedTerm` allowed 16 but the cascade may not reach it | §5.11 states 16× is four atempo stages and supported; a test asserts the count and the 0.5–2.0 range |
+
+Also: 88 figure assertions, 69 tests, five golden graphs. The migration checker caught its own header drift — the defect it was built for — before the version shipped.
+
+**Still open after v1.8:** six findings, in `docs/reviews/v1.9-candidates.md`, four of them verification debt.
+
+---
+
 ## v1.7 — 22 November 2026
 
 **Basis:** seventh technical review, plus the first migration checker.

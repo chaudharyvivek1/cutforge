@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.3 — 22 November 2026
+
+**Basis:** thirteenth technical review.
+**Theme:** the engine stops. A poison job quarantined instead of retried forever, an audio crossfade measured to the sample, and one state machine instead of two.
+
+| Finding | Resolved by |
+|---|---|
+| The worker had no retry policy | `Store.fail()` retries by failure class, gives up on permanent and budget failures, and quarantines after three identical transient ones |
+| No audio transition in any fixture | `acrossfade` compiled per track; the test asserts the decoded sample count equals the frame-derived total exactly — 941,741 samples for 588 frames |
+| The corpus had no data | A committed synthetic corpus exercises the loader, validator and rates end to end |
+| The perceptual fallback had no golden | The Appendix A fingerprint is recorded beside its hash |
+| Overlays scheduled and absent | Unchanged, and unchanged on purpose: §21 keeps it as phase three |
+| The service and worker implemented one state machine twice | `JobStore` deleted; the service runs on the durable `Store` |
+
+Also: 165 tests. The duplicate state machine was the third instance of the repository's recurring defect — two implementations of one contract, each correct, never introduced to each other — and the first whose fix was a deletion.
+
+**Still open after v2.3:** six findings, in `docs/reviews/v2.4-candidates.md`. The sharpest is that `quarantined` is missing from the schema's state CHECK.
+
+---
+
 ## v2.2 — 22 November 2026
 
 **Basis:** twelfth technical review.

@@ -23,7 +23,8 @@ Each version is a full standalone specification answering one external technical
 | v2.0 | Tenth technical review | "The rules are right; now produce a frame" | A renderer under frame hashes (§19.1), the template planner (§7.6), the identity state machine (§8.5), an OTIO round trip (§11.7), colour in both directions (§11.4), and document/IR versions separated |
 | v2.1 | Eleventh technical review | "The engine must run, not just compile" | A job service (§15, §17, §18), the repair loop (§7.4), the compiler's own fixtures rendered (§19.1), accuracy and colour harnesses (§8.6, §11.4), and §11.7 narrowed to what is built |
 | v2.2 | Twelfth technical review | "The engine must survive a restart" | A durable store and worker (§18), content-sensitive render fixtures (§19.1), the repair band closed (§7.7), a corpus contract (§8.6), a perceptual fallback (§11.8), and overlays scheduled (§21) |
-| v2.3 | *Not started* | — | The six open findings in `docs/reviews/v2.3-candidates.md` — the service and the worker implement one state machine twice |
+| v2.3 | Thirteenth technical review | "The engine must stop cleanly" | Retry by class and quarantine (§18), acrossfade measured to the sample (§11.5), a corpus pipeline that runs (§8.6), a recorded fingerprint (§11.8), and the duplicate state machine deleted (§15) |
+| v2.4 | *Not started* | — | The six open findings in `docs/reviews/v2.4-candidates.md` — the schema has not caught up with the quarantine state |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -254,6 +255,26 @@ v2.2 is the first version whose state survives a process. Everything before it l
 
 **And the round created its own next finding.** `tests/service.py` still uses the in-memory `JobStore` while `tests/store.py` uses SQLite, so the same state machine now exists twice. That is the pattern this repository has documented since v1.4, stated in one line: *the fix creates the next finding, and the next finding is always a second copy of something that should have one.*
 
+## 2k. The v2.3 round
+
+v2.3 is the first version whose main change was a deletion. `service.JobStore` and `store.Store` each implemented the same state machine, so the HTTP layer — the one a client sees — was the one that did not survive a restart. Deleting the first fixed a divergence that no test could have caught while both existed.
+
+| # | Commit | What it did |
+|---|---|---|
+| 87 | `feat(store): retry by failure class, then quarantine` | A permanent failure is not retried; three identical transient failures quarantine |
+| 88 | `fix(service): run on the durable store and delete the duplicate` | One state machine, one set of invariants |
+| 89 | `feat(compiler): acrossfade per audio track` | §5.7's audio handle rule meets ffmpeg |
+| 90 | `test: measure the crossfade, load the corpus, record the fingerprint` | 941,741 samples asserted exactly; a synthetic corpus that runs end to end |
+| 91 | `docs(spec): add the v2.3 source` | 14 anchored edits |
+| 92 | `docs(spec): build v2.3 and archive v2.2` | 61 pages, 165 tests |
+| 93 | `docs: release notes for v2.3` | Changelog, version line, this section |
+
+**A retry counter is not a retry policy.** v2.2 requeued every orphan unconditionally, so a job that crashed the process would loop forever — the failure §18 names as poison. The fix distinguishes the classes: a transient failure may heal, a corrupt source does not, and a budget that is exhausted does not refill. Three identical transient failures quarantine the job, and a quarantined job is never claimed again.
+
+**And the round produced the pattern again.** Adding `quarantined` to the store did not add it to §13.3's `jobs.state` CHECK, so a real Postgres deployment would reject the update the reference implementation now performs. That is precisely what v1.3's §0 accused v1.2 of — code and schema drifting apart — reappearing in the version that added a quarantine. It is finding 3 of the v2.4 list, and the proposed fix is to compare the two lists in CI rather than in review.
+
+**What the crossfade proved.** Two clips, a 12-frame dissolve, 588 frames: the decoded audio is 941,741 samples, which is `samplesFor(588)` exactly. §5.7's handle rule and §11.5's acceptance test met in one fixture for the first time — and it is the only fixture where either can be wrong in a way a hash would miss.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -274,14 +295,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The worker has no scheduler, concurrency or retry policy | `reviews/v2.3-candidates.md` §1 | A job that crashes the process, which would requeue forever |
-| The render fixtures have no audio transition | §2 | §5.7's audio handle rule meeting ffmpeg |
-| The corpus contract has no data | §3 | The loader and validator running end to end |
-| The perceptual fallback has no golden fingerprint | §4 | Distinguishing a picture change from a build change |
-| Overlays are scheduled and still absent | §5 | Designed titles |
-| The service and the worker implement one state machine twice | §6 | One contract, two copies, free to drift |
+| No scheduler: one worker, no concurrency, no fairness | `reviews/v2.4-candidates.md` §1 | Starvation, p95 latency, a fleet of GPUs |
+| The retry policy has no backoff and no jitter | §2 | A thundering herd against a recovering dependency |
+| `quarantined` is missing from the job state CHECK | §3 | Any real Postgres deployment |
+| The acrossfade fixture asserts length and not content | §4 | A fade at the wrong offset |
+| Overlays remain scheduled and unbuilt | §5 | Designed titles, for a second version |
+| The synthetic corpus could be mistaken for a measurement | §6 | Any accuracy figure quoted from it |
 
-Nothing in that list is architectural. Two are consequences of v2.2's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Two are consequences of v2.3's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

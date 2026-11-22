@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import auth as A
 import metrics as M
+import ratelimit as RL
 
 
 def job_view(row):
@@ -56,7 +57,13 @@ def make_handler(store, tokens=None):
             parts = [p for p in self.path.strip("/").split("/") if p]
 
             if parts == ["v1", "jobs"]:
-                job, created = store.submit(self._tenant(), body.get("kind", "plan"),
+                tenant = self._tenant()
+                if tenant is None:
+                    return
+                if not self.server.buckets.take(tenant):
+                    return self._send(429, {"error": {"code": "RATE_LIMITED",
+                                                      "retry_after": self.server.buckets.retry_after(tenant)}})
+                job, created = store.submit(tenant, body.get("kind", "plan"),
                                             self.headers.get("Idempotency-Key"),
                                             body.get("payload"))
                 return self._send(202 if created else 200,
@@ -116,14 +123,16 @@ def make_handler(store, tokens=None):
 class Server:
     """A context manager, so a test cannot leak a listening socket."""
 
-    def __init__(self, store, tokens):
+    def __init__(self, store, tokens, buckets=None):
         self.store = store
         self.tokens = tokens
+        self.buckets = buckets or RL.Buckets()
         self.httpd = None
 
     def __enter__(self):
         self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(self.store, self.tokens))
         self.httpd.tokens = self.tokens
+        self.httpd.buckets = self.buckets
         self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
         self.thread.start()
         self.url = f"http://127.0.0.1:{self.httpd.server_address[1]}"

@@ -2,9 +2,11 @@ name: benchmark
 
 # §12.9's matrix, measured. Weekly and on demand, never on a pull request:
 # GPU minutes cost money and throughput regression is not a correctness failure.
+# Manual only. A scheduled job with no matching runner queues indefinitely and
+# reports nothing, which is the failure mode this repository fixed for tests in
+# v1.8 and would now be reproducing in CI. Run it by hand once a GPU runner
+# exists; see docs/benchmarks/README.md.
 on:
-  schedule:
-    - cron: "0 3 * * 1"
   workflow_dispatch:
 
 jobs:

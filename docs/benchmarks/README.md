@@ -6,7 +6,7 @@ This directory is where measured numbers go, and the rule for adding one is the 
 
 ## What the workflow does
 
-`.github/workflows/benchmark.yml` runs weekly and on demand, on a runner labelled `gpu`. It renders the fixtures at each resolution in §12.9's matrix and writes the results here as JSON:
+`.github/workflows/benchmark.yml` runs **on demand only**, on a runner labelled `gpu`. It was weekly in v2.5 and that was a mistake: with no runner registered the job queues forever and reports nothing, which is the same shape as a test that skips. It renders the fixtures at each resolution in §12.9's matrix and writes the results here as JSON:
 
 ```
 docs/benchmarks/<date>-<gpu>.json

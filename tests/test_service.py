@@ -135,6 +135,17 @@ class TestService(unittest.TestCase):
         self.assertIn("cutforge_queue_depth", text)
         self.assertIn('cutforge_jobs_total{state="queued"} 1', text)
 
+    def test_a_rate_limited_tenant_is_refused_with_retry_after(self):
+        # §16.1: the concurrency cap delays; a rate limit refuses
+        self.server.buckets.capacity = 2
+        self.server.buckets.state.clear()
+        self.assertEqual(self._submit()[0], 202)
+        self.assertEqual(self._submit()[0], 202)
+        code, body = self._submit()
+        self.assertEqual(code, 429)
+        self.assertEqual(body["error"]["code"], "RATE_LIMITED")
+        self.assertGreaterEqual(body["error"]["retry_after"], 1)
+
     def test_an_unknown_job_is_404(self):
         code, _ = call(f"{self.url}/v1/jobs/job_missing",
                        headers={"Authorization": "Bearer tok_a"})

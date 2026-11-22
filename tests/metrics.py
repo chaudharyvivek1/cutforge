@@ -19,6 +19,8 @@ def render(store, now=None):
         "SELECT COUNT(*) n FROM jobs WHERE attempt > 1").fetchone()["n"]
     attempts = store.db.execute(
         "SELECT attempt, COUNT(*) n FROM jobs GROUP BY attempt").fetchall()
+    claimed = store.db.execute(
+        "SELECT MAX(claimed_at) t FROM jobs WHERE state='running'").fetchone()["t"]
 
     out = [
         "# HELP cutforge_jobs_total Jobs by state.",
@@ -36,6 +38,10 @@ def render(store, now=None):
             "# HELP cutforge_retries_total Jobs that have been retried.",
             "# TYPE cutforge_retries_total counter",
             f"cutforge_retries_total {retries}",
+            "# HELP cutforge_worker_heartbeat_age_seconds Seconds since a worker last claimed.",
+            "# TYPE cutforge_worker_heartbeat_age_seconds gauge",
+            f"cutforge_worker_heartbeat_age_seconds "
+            f"{round(max(0.0, now - claimed), 3) if claimed else 0.0}",
             "# HELP cutforge_attempts_total Jobs by attempt count.",
             "# TYPE cutforge_attempts_total gauge"]
     for row in attempts:

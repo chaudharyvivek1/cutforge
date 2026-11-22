@@ -15,6 +15,8 @@ import json
 import sqlite3
 import time
 import uuid
+
+import webhook
 from contextlib import contextmanager
 
 # The states no transition leaves. `expired` was in this tuple from v2.2 and
@@ -54,6 +56,28 @@ CREATE TABLE IF NOT EXISTS jobs (
   UNIQUE (tenant_id, idempotency_key)
 );
 CREATE INDEX IF NOT EXISTS jobs_claimable ON jobs (state, claimed_at);
+
+CREATE TABLE IF NOT EXISTS webhook_endpoints (
+  id         TEXT PRIMARY KEY,
+  tenant_id  TEXT NOT NULL,
+  url        TEXT NOT NULL,
+  secret     TEXT NOT NULL,
+  UNIQUE (tenant_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS deliveries (
+  id              TEXT PRIMARY KEY,
+  tenant_id       TEXT NOT NULL,
+  endpoint_id     TEXT NOT NULL,
+  job_id          TEXT,
+  event           TEXT NOT NULL,
+  body            TEXT NOT NULL,
+  state           TEXT NOT NULL DEFAULT 'pending',
+  attempts        INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at REAL NOT NULL DEFAULT 0,
+  created_at      REAL NOT NULL,
+  UNIQUE (tenant_id, job_id, event)
+);
 """
 
 
@@ -179,13 +203,87 @@ class Store:
             return dict(db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone())
 
     def finish(self, job_id, state, error=None):
-        """Terminal states are final: a finished job is never reopened."""
+        """Terminal states are final: a finished job is never reopened.
+
+        A terminal state also emits an event, and the UNIQUE (tenant, job,
+        event) makes the emission idempotent — a job finished twice does not
+        deliver twice, which is what §15.3's at-least-once promise requires
+        of the sender.
+        """
         with self.tx() as db:
             placeholders = ",".join("?" * len(TERMINAL))
-            db.execute(
+            changed = db.execute(
                 f"UPDATE jobs SET state=?, error=?, claimed_by=NULL, updated_at=?"
                 f" WHERE id=? AND state NOT IN ({placeholders})",
-                (state, error, self.clock(), job_id, *TERMINAL))
+                (state, error, self.clock(), job_id, *TERMINAL)).rowcount
+            if changed:
+                self._emit(db, job_id, state)
+            return changed
+
+    def _emit(self, db, job_id, state):
+        row = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
+        if row is None:
+            return
+        event = f"job.{state}"
+        for endpoint in db.execute(
+                "SELECT * FROM webhook_endpoints WHERE tenant_id=?",
+                (row["tenant_id"],)).fetchall():
+            body = json.dumps({"event": event, "job_id": job_id,
+                               "tenant_id": row["tenant_id"],
+                               "state": state, "error": row["error"]}).encode()
+            try:
+                db.execute(
+                    "INSERT INTO deliveries (id, tenant_id, endpoint_id, job_id, event,"
+                    " body, created_at) VALUES (?,?,?,?,?,?,?)",
+                    (f"dlv_{uuid.uuid4().hex[:8]}", row["tenant_id"], endpoint["id"],
+                     job_id, event, body.decode(), self.clock()))
+            except sqlite3.IntegrityError:
+                pass                      # already emitted: idempotent by design
+
+    # ------------------------------------------------------------- delivery
+    def add_endpoint(self, tenant, url, secret):
+        endpoint_id = f"wh_{uuid.uuid4().hex[:8]}"
+        with self.tx() as db:
+            db.execute("INSERT INTO webhook_endpoints (id, tenant_id, url, secret)"
+                       " VALUES (?,?,?,?)", (endpoint_id, tenant, url, secret))
+        return endpoint_id
+
+    def pending_deliveries(self, now=None):
+        now = self.clock() if now is None else now
+        rows = self.db.execute(
+            "SELECT * FROM deliveries WHERE state='pending' AND next_attempt_at<=?"
+            " ORDER BY created_at", (now,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def delivery(self, delivery_id):
+        row = self.db.execute("SELECT * FROM deliveries WHERE id=?",
+                              (delivery_id,)).fetchone()
+        return dict(row) if row else None
+
+    def delivery_failed(self, delivery_id, base_delay=1.0, ceiling=5):
+        """Retry with the same backoff shape §18 uses; dead-letter after five."""
+        with self.tx() as db:
+            row = db.execute("SELECT * FROM deliveries WHERE id=?",
+                             (delivery_id,)).fetchone()
+            if row is None:
+                return None
+            attempts = row["attempts"] + 1
+            if attempts >= ceiling:
+                db.execute("UPDATE deliveries SET state='dead', attempts=? WHERE id=?",
+                           (attempts, delivery_id))
+            else:
+                delay = base_delay * (2 ** (attempts - 1))
+                db.execute("UPDATE deliveries SET attempts=?, next_attempt_at=? WHERE id=?",
+                           (attempts, self.clock() + delay, delivery_id))
+            return self.delivery(delivery_id)
+
+    def delivery_request(self, delivery_id):
+        """The body and headers a sender posts, signed with the endpoint secret."""
+        row = self.delivery(delivery_id)
+        endpoint = self.db.execute("SELECT * FROM webhook_endpoints WHERE id=?",
+                                   (row["endpoint_id"],)).fetchone()
+        body = row["body"].encode()
+        return body, webhook.headers(endpoint["secret"], body)
 
     def requeue_orphans(self, older_than=30.0):
         """A worker that died leaves a running job; put it back.

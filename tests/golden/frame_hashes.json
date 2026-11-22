@@ -1,0 +1,12 @@
+{
+  "cut": {
+    "build": "ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg": "n9.0.2",
+    "sha256": "7d9ee87173015285fa7eaccf4680c0d5ab3e09a6ab41c9edc72e6e281a8ceeae"
+  },
+  "dissolve": {
+    "build": "ffmpeg version n9.0.2-17-g2a571b6068-20260930 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg": "n9.0.2",
+    "sha256": "5239025b89ba6c969c9da95f96fbb17e6ab26f00538c8540cdd2a6bc1cfebfd9"
+  }
+}

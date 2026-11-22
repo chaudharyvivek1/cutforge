@@ -1,0 +1,122 @@
+{
+  "short_hook": {
+    "aspect": "9:16",
+    "duration_ladder": {
+      "fallback": "extend_payoff",
+      "fallback_above_ms": 500,
+      "repair_above_ms": 200
+    },
+    "duration_target_ms": 10010,
+    "goal": "10s teaser",
+    "must_avoid": [],
+    "must_keep": [],
+    "pacing": {
+      "on_beat": false,
+      "tolerance_ms": 120
+    },
+    "structure": [
+      {
+        "asset": "ast_a91",
+        "beat": "hook",
+        "record": [
+          0,
+          150
+        ],
+        "source": [
+          0,
+          240
+        ]
+      },
+      {
+        "asset": "ast_c13",
+        "beat": "payoff",
+        "record": [
+          150,
+          300
+        ],
+        "source": [
+          0,
+          240
+        ]
+      }
+    ]
+  },
+  "single_shot": {
+    "aspect": "9:16",
+    "duration_ladder": {
+      "fallback": "extend_payoff",
+      "fallback_above_ms": 250,
+      "repair_above_ms": 100
+    },
+    "duration_target_ms": 5005,
+    "goal": "5s end card",
+    "must_avoid": [],
+    "must_keep": [
+      "logo"
+    ],
+    "pacing": {
+      "on_beat": false,
+      "tolerance_ms": 120
+    },
+    "structure": [
+      {
+        "asset": "ast_a91",
+        "beat": "hook",
+        "record": [
+          0,
+          150
+        ],
+        "source": [
+          2160,
+          2400
+        ]
+      }
+    ]
+  },
+  "three_shot_reel": {
+    "aspect": "9:16",
+    "duration_ladder": {
+      "fallback": "extend_payoff",
+      "fallback_above_ms": 2251,
+      "repair_above_ms": 900
+    },
+    "duration_target_ms": 45011,
+    "goal": "45s vertical product reel",
+    "must_avoid": [
+      "person:ceo"
+    ],
+    "must_keep": [
+      "product close-up"
+    ],
+    "pacing": {
+      "on_beat": false,
+      "tolerance_ms": 120
+    },
+    "structure": [
+      {
+        "asset": "ast_a91",
+        "beat": "hook",
+        "record": [
+          0,
+          674
+        ],
+        "source": [
+          1440,
+          1751
+        ]
+      },
+      {
+        "asset": "ast_c13",
+        "beat": "payoff",
+        "record": [
+          674,
+          1349
+        ],
+        "source": [
+          60,
+          254
+        ]
+      }
+    ]
+  }
+}

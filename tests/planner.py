@@ -18,6 +18,11 @@ def _fps(value):
     return value if isinstance(value, F) else F(value)
 
 
+# §7.2: a hook is at most three seconds. Longer is an opening shot, and an
+# opening shot is what the payoff is for.
+HOOK_MAX_FRAMES = 90
+
+
 def plan(request):
     """Structured request to Edit Plan (§7.2). Deterministic and total."""
     fps = _fps(request.get("fps", F(30000, 1001)))
@@ -32,13 +37,26 @@ def plan(request):
     kept = [s for s in shots if set(s.get("labels", [])) & set(request.get("must_keep", []))]
     ordered = kept + [s for s in shots if s not in kept]
 
-    # even shares, remainder to the payoff — never to the hook (§7.2 fallback)
+    # Even shares, remainder to the payoff — never to the hook (§7.2 fallback).
+    #
+    # Even shares alone are not enough, which the v2.12 rubric exposed: with two
+    # shots the "hook" was half the film, 22.5 s of a 45 s reel, labelled a hook
+    # and behaving as an opening shot nobody watches. A hook is bounded, and
+    # what it gives up goes to the payoff.
     n = len(ordered)
     share = target_frames // n
+    shares = [share] * n
+    shares[-1] = target_frames - share * (n - 1)
+    if n >= 2:
+        cap = min(share, HOOK_MAX_FRAMES)
+        if shares[0] > cap:
+            excess = shares[0] - cap
+            shares[0] = cap
+            shares[-1] += excess
     structure = []
     cursor = 0
     for i, shot in enumerate(ordered):
-        frames = share if i < n - 1 else target_frames - cursor
+        frames = shares[i]
         structure.append({"beat": _beat(i, n), "record": [cursor, cursor + frames],
                           "asset": shot["asset"], "source": [shot["in"], shot["out"]]})
         cursor += frames

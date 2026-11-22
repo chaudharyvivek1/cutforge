@@ -527,10 +527,30 @@ class Worker:
         self.store = store
         self.name = name
         self.segments = segments
+        self.sweeps = 0
+        self.swept = 0
 
     def idle_sweep(self):
         """Called when the queue is empty: a mechanism nobody runs is not a policy."""
-        return self.store.expire_segments()
+        removed = self.store.expire_segments()
+        self.sweeps += 1
+        self.swept += removed
+        return removed
+
+    def run_forever(self, iterations=None, sleep=None):
+        """The loop §18 describes: work when there is work, sweep when there is not.
+
+        v2.11 added `idle_sweep` and nothing called it, which is the same
+        defect one level down: a sweep nobody schedules is not a sweep.
+        """
+        import time as _time
+        sleep = sleep or _time.sleep
+        for _ in range(iterations if iterations is not None else 10 ** 9):
+            job = self.run_once()
+            if job is None:
+                self.idle_sweep()
+            sleep(0)
+        return getattr(self, "swept", 0)
 
     def run_once(self):
         job = self.store.claim(self.name)

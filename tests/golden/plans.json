@@ -20,7 +20,7 @@
         "beat": "hook",
         "record": [
           0,
-          150
+          90
         ],
         "source": [
           0,
@@ -31,7 +31,7 @@
         "asset": "ast_c13",
         "beat": "payoff",
         "record": [
-          150,
+          90,
           300
         ],
         "source": [
@@ -98,7 +98,7 @@
         "beat": "hook",
         "record": [
           0,
-          674
+          90
         ],
         "source": [
           1440,
@@ -109,7 +109,7 @@
         "asset": "ast_c13",
         "beat": "payoff",
         "record": [
-          674,
+          90,
           1349
         ],
         "source": [

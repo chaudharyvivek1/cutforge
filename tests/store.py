@@ -337,6 +337,19 @@ class Store:
             " AND params_hash=?", (tenant, asset_id, kind, params_hash)).fetchone()
         return dict(row) if row else None
 
+    def expire_segments(self, older_than_seconds=0.0, now=None):
+        """Segments are a cache, not an asset: they must expire (§11.5).
+
+        v2.9 published segments and never removed them, so a tenant's storage
+        grew with every render attempt — a cost bug wearing a cache's clothes.
+        """
+        now = self.clock() if now is None else now
+        with self.tx() as db:
+            removed = db.execute(
+                "DELETE FROM asset_derivatives WHERE kind='segment' AND created_at<=?",
+                (now - older_than_seconds,)).rowcount
+        return removed
+
     def stored_bytes(self, tenant):
         """Originals plus derivatives, which is what a storage quota counts."""
         original = self.db.execute(

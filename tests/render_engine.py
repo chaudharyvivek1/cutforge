@@ -78,3 +78,59 @@ def render_chunked(asset_id, segments, publisher, params="seg"):
         out.append(data)
         rendered += 1
     return concat(out), rendered, reused
+
+
+# --------------------------------------------------------------- encoded path
+def encode_segment(graph, inputs, out_path, crf=18):
+    """Encode one chunk to a file with a closed GOP.
+
+    Raw-frame concatenation proves the *graph*; a customer receives a file, so
+    the segments must also survive an encode and a container join. Closed GOPs
+    keep a segment decodable on its own, which is what makes the join safe.
+    """
+    import subprocess
+    out_path = str(out_path)
+    cmd = [R.FFMPEG, "-y", "-loglevel", "error"]
+    for path in inputs:
+        cmd += ["-i", str(path)]
+    cmd += ["-filter_complex", graph, "-map", "[v_out]",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", str(crf),
+            "-g", "48", "-keyint_min", "48", "-sc_threshold", "0",
+            "-force_key_frames", "expr:gte(t,0)", out_path]
+    subprocess.run(cmd, check=True, capture_output=True)
+    return out_path
+
+
+def concat_encoded(paths, out_path):
+    """Join encoded segments at the container level, as a renderer would."""
+    import subprocess
+    listing = str(out_path) + ".txt"
+    with open(listing, "w") as handle:
+        for path in paths:
+            handle.write(f"file '{path}'\n")
+    subprocess.run([R.FFMPEG, "-y", "-loglevel", "error", "-f", "concat",
+                    "-safe", "0", "-i", listing, "-c", "copy", str(out_path)],
+                   check=True, capture_output=True)
+    return out_path
+
+
+def decoded(path):
+    """The decoded frames of a file, for comparing what a viewer would see."""
+    import subprocess
+    result = subprocess.run(
+        [R.FFMPEG, "-y", "-loglevel", "error", "-i", str(path),
+         "-f", "rawvideo", "-pix_fmt", "yuv420p", "-"], capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.decode()[-500:])
+    return result.stdout
+
+
+def frame_count(path):
+    """Frames in a file, from a decode pass — `-i` alone does not report one."""
+    import re
+    import subprocess
+    result = subprocess.run(
+        [R.FFMPEG, "-hide_banner", "-i", str(path), "-f", "null", "-"],
+        capture_output=True, text=True)
+    matches = re.findall(r"frame=\s*(\d+)", result.stderr)
+    return int(matches[-1]) if matches else None

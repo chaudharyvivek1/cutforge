@@ -99,3 +99,31 @@ class RecordedTranscriber(Transcriber):
 
     def run(self, path=None):
         return Transcript.from_json(path or self.path)
+
+
+class ProviderJSON(Transcriber):
+    """An adapter over a provider's word-timed response.
+
+    Every hosted ASR returns something close to this shape — a list of words
+    with start and end in seconds — so the adapter's job is to convert
+    seconds to source frames and nothing else. Keeping the conversion here
+    means the contract in §10.4 is the only thing the rest of the pipeline
+    knows about.
+    """
+
+    def __init__(self, path, fps):
+        self.path = path
+        self.fps = F(fps)
+
+    def run(self, path=None):
+        data = json.loads(open(path or self.path).read())
+        words = []
+        for item in data.get("words", data.get("segments", [])):
+            if "start" not in item or "end" not in item:
+                raise ValueError("provider response has no timings")
+            words.append({
+                "text": item.get("word", item.get("text", "")).strip(),
+                "start": SR.frames_for_seconds(F(str(item["start"])).limit_denominator(10**6), self.fps),
+                "end": SR.frames_for_seconds(F(str(item["end"])).limit_denominator(10**6), self.fps),
+            })
+        return Transcript(words=Transcript.validate(words))

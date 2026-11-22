@@ -17,7 +17,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install the two dependencies the document tooling needs
-        run: pip install --quiet python-docx pymupdf sqlglot
+        run: pip install --quiet python-docx pymupdf sqlglot imageio-ffmpeg
 
       - name: Every asserted figure, recomputed
         run: python build/check_figures.py
@@ -31,6 +31,14 @@ jobs:
       - name: The document's own worked examples, executed
         run: python -m unittest discover -s tests -t tests -v
 
+      - name: No test may skip silently
+        run: |
+          python -m unittest discover -s tests -t tests -v 2>&1 | tee /tmp/all.txt
+          if grep -qi "skipped" /tmp/all.txt; then
+            echo "::error::a test skipped — ffmpeg or LibreOffice is missing, and a skip is not a pass"
+            exit 1
+          fi
+
       - name: The .docx still matches its source
         run: |
           DOCX=$(ls docs/spec/*.docx | sort -V | tail -1)
@@ -43,18 +51,22 @@ jobs:
     # The rendered-page check needs LibreOffice, which the default image lacks.
     # It runs on main only, because it costs two minutes and catches the class
     # of defect that only a page can show: split rows, collapsed builds.
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Cache LibreOffice
+        uses: actions/cache@v4
+        with:
+          path: /usr/lib/libreoffice
+          key: lo-${{ runner.os }}-v1
       - name: Install the renderer and the tooling
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq libreoffice-writer
-          pip install --quiet python-docx pymupdf
+          pip install --quiet python-docx pymupdf imageio-ffmpeg
       - name: The document, rendered and read
         run: |
           python -m unittest discover -s tests -t tests -k TestLayout -v 2>&1 | tee /tmp/layout.txt

@@ -20,7 +20,8 @@ Each version is a full standalone specification answering one external technical
 | v1.7 | Seventh technical review | "Rules executed; now prove the translation" | A reference compiler under golden files (§19.1), the VFR threshold either side (§5.4), the erasure schema (§13.3, §16.6.1), `speed` bounded in the schema (§6.4), the 95th-percentile example (§20.3), and a static migration check (§13.5) |
 | v1.8 | Eighth technical review | "Rules and translation proved; now the artefact" | Five golden graphs (§19.1), a byte-reproducible build (§11.6), a round-trip test, a rendered-page check, the commitment break-even (§20.3), and 16× stated as four stages (§5.11) |
 | v1.9 | Ninth technical review | "Rules and artefact proved; now the implementation" | LUTs compiled (§11.4), colour in both directions (§12.6), a mixed audio bus (§11.1), golden provenance (§19.1), the break-even as a formula (§20.3), and a layout check that cannot pass by skipping |
-| v2.0 | *Not started* | — | The six open findings in `docs/reviews/v2.0-candidates.md` — all of them the distance to a working renderer |
+| v2.0 | Tenth technical review | "The rules are right; now produce a frame" | A renderer under frame hashes (§19.1), the template planner (§7.6), the identity state machine (§8.5), an OTIO round trip (§11.7), colour in both directions (§11.4), and document/IR versions separated |
+| v2.1 | *Not started* | — | The six open findings in `docs/reviews/v2.1-candidates.md` — the largest is that the engine has never run as a service |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -188,6 +189,27 @@ v1.9 is the first version where the list contained nothing but verification debt
 
 **Where the repository now stands.** The document has no known contradiction in it, the tooling proves the document, and the reference implementation reaches the filter graph. What it does not reach is a pixel. That is the whole of the v2.0 list, and it is the right next thing: eight golden graphs prove that the compiler says what it means, and nothing yet proves that ffmpeg does what the graph says.
 
+## 2h. The v2.0 round
+
+v2.0 is the first version whose reference implementation produces frames. Everything before it proved a string; a filter graph can be syntactically perfect and semantically wrong, and four versions of checking had no way to tell.
+
+| # | Commit | What it did |
+|---|---|---|
+| 65 | `feat(test): render a graph and hash its frames` | `tests/renderer.py` — ffmpeg execution, pre-encode hashing, the build recorded beside the hash |
+| 66 | `feat(test): the template planner` | `tests/planner.py`, three golden plans, eight tests |
+| 67 | `feat(test): the identity state machine and the OTIO round trip` | `tests/identity.py`, `tests/otio_export.py` |
+| 68 | `build: separate the document version from the IR version` | Two versions, two checks — conflating them was a tooling defect |
+| 69 | `docs(spec): add the v2.0 source` | 17 anchored edits |
+| 70 | `ci: install ffmpeg and refuse silent skips` | No test may skip; layout runs on pull requests |
+| 71 | `docs(spec): build v2.0 and archive v1.9` | 61 pages, 114 tests |
+| 72 | `docs: release notes for v2.0` | Changelog, version line, this section |
+
+**The renderer cost an afternoon and answered the question the last four versions could not.** Two fixtures — a cut and a dissolve — execute through ffmpeg and hash to `7d9ee871…` and `5239025b…`. The hash is taken on raw frames *before* the encoder, which is the split §11.8 makes: compiler determinism is a property of the graph, delivered-byte reproducibility is a property of a pinned encoder. Each hash is stored beside the ffmpeg build that produced it, so a mismatch reports both builds rather than a mystery — §11.6's rule applied to the repository itself.
+
+**The version split was a defect worth naming.** Every checker until v2.0 required the document version and the IR version to be equal. That is wrong, and it forced a choice between shipping a misleading major number and breaking a schema that did not need breaking. The two are now separate: `VERSION 2.0` and `timeline/1.9`, stated in the front matter, checked for internal consistency and not for equality.
+
+**What is still not proven.** The renderer hashes two graphs written as literals in the test, not the compiler's own output — the golden fixtures reference assets the repository does not carry. And nothing has ever run as a service: no API, no queue, no worker, no cancellation. Both are at the top of the v2.1 list, and both are the same kind of honesty this repository has been practising since v1.4 — name the gap precisely enough that someone can close it.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -208,14 +230,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| No pixels are ever produced | `reviews/v2.0-candidates.md` §1 | Every semantic guarantee the compiler makes |
-| Working-space colour and per-shot matching are not compiled | §2 | Any IR needing colour management |
-| The planner and repair loop have no reference implementation | §3 | The 80%-first-attempt target |
-| The identity path has no reference implementation | §4 | The hold state machine, before any biometrics |
-| OTIO export and Remotion overlays are specified and not compiled | §5 | Professional handoff and designed graphics |
-| The layout check runs on main only | §6 | A pull request that breaks the layout |
+| The engine has never run as a service | `reviews/v2.1-candidates.md` §1 | Every runtime contract in §15, §17 and §18 |
+| Frame hashes cover two hand-written graphs, not the fixtures | §2 | That the compiler's graph renders correctly, not just that a graph does |
+| The repair loop is specified and not implemented | §3 | The attempt ceiling, the budget and the fail-with-a-reason rule |
+| Identity accuracy targets are unmeasured | §4 | Any claim about matching quality |
+| The Remotion overlay path is `drawtext` | §5 | Designed titles and alpha compositing |
+| Per-shot colour matching has no acceptance test | §6 | Estimating the feature at all |
 
-Nothing in that list is architectural, and for the first time every item is verification debt — the rule is right and the reference implementation does not yet reach it. The document has no known contradiction in it; what it has is an implementation that stops at the filter graph — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Two are consequences of v2.0's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

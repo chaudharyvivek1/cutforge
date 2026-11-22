@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.0 — 22 November 2026
+
+**Basis:** tenth technical review. All six findings were verification debt: the rule was right and the reference implementation had not reached it.
+**Theme:** the first version that produces frames. The major number is not a schema break — `timeline/1.9` is unchanged, and the front matter now says so.
+
+| Finding | Resolved by |
+|---|---|
+| No pixels were ever produced | `tests/renderer.py` executes a graph with ffmpeg and hashes decoded frames before the encoder; `golden/frame_hashes.json` records the hash beside the ffmpeg build |
+| Working-space colour and per-shot matching were not compiled | Both colour conversions compile; per-shot matching moves to the roadmap as an analysis feature with its own acceptance test |
+| The planner had no reference implementation | `tests/planner.py` implements the §7.6 template planner, three golden plans, eight tests |
+| The identity path had no reference implementation | `tests/identity.py` implements the hold state machine with no biometrics: uncertainty holds, and a timeout is not consent |
+| OTIO export was specified and not compiled | `tests/otio_export.py` round-trips tracks, clips, durations, assets and gaps |
+| The layout check ran on main only | It runs on pull requests with a cached install, and no test may skip silently |
+
+Also: the document version and the IR version are now separate, and the tooling enforces it. Conflating them was itself a defect — a document can ship a major version without breaking a schema, and a checker that forbids it forces the wrong decision.
+
+**Still open after v2.0:** six findings, in `docs/reviews/v2.1-candidates.md`. The largest is that the engine has never run as a service.
+
+---
+
 ## v1.9 — 22 November 2026
 
 **Basis:** ninth technical review. Four of the six findings were verification debt — the rule was right and the reference implementation had not reached it.

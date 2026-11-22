@@ -9,7 +9,8 @@ The specification is the product. Everything here exists to keep it correct, rev
 ```bash
 python build/check_figures.py        # the arithmetic
 python build/check_consistency.py    # everything that is not arithmetic
-python -m unittest discover -s tests -t tests   # the behaviour
+python build/check_sql.py            # the migration's tenant keys and RLS coverage
+python -m unittest discover -s tests -t tests   # the behaviour, rules and compiler
 
 Both find the current specification in `docs/spec/` rather than naming a version, so they do not go stale when one is archived.
 ```

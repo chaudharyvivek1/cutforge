@@ -6,6 +6,28 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v1.7 — 22 November 2026
+
+**Basis:** seventh technical review, plus the first migration checker.
+**Theme:** the translation proved. A reference compiler under golden files, a boundary tested either side, and every field the prose named now in the schema.
+
+| Finding | Resolved by |
+|---|---|
+| The conformance suite covered the rules, not the compiler | `tests/compiler.py` compiles the Appendix A timeline; `tests/golden/appendix_a.graph` is the approved graph. It found a domain bug within the hour |
+| The `jurisdiction` field was named and not specified | §16.6.1 specifies ISO 3166-2, a deadline table counsel owns as data, and the stricter default; §13.3 adds the `erasures` table that holds it |
+| Nothing ran the tests automatically | `.github/workflows/verify.yml` runs four checks on every push and pull request, including the round trip from the `.docx` |
+| The VFR fixture never sat near the 1% threshold | `near_threshold()` generates 0.9%, 1.0% and 1.1% cases; exactly 1% is not yet VFR |
+| `speed` bounds lived only in the validator | §6.4 adds a `pattern` admitting 1–16 to the rate string; the validator rule stays as the backstop |
+| The CDN commitment was mentioned and unpriced | §20.3 works one 95th-percentile example: 40 Mbps provisions 12.96 TB for 3 TB delivered |
+| The composite-key rule was broader than its own migration | §13.2 scopes it to tables that can be referenced; `build/check_sql.py` asserts it against the published migration |
+| A new table was added and the isolation loop was not | `erasures` is in both RLS loops, and the SQL check fails if any table with a `tenant_id` is missing |
+
+Also: `build/check_sql.py` parses the migration with sqlglot and checks the tenant keys and the RLS coverage — the test §13.5 promised, run statically so it needs no database. And the extractor was fixed: a blank line inside a code block used to end it on extraction, so every listing with a blank line had been silently truncated since v1.1. The migration check found it by reporting zero tables where the source had seventeen.
+
+**Still open after v1.7:** six findings, in `docs/reviews/v1.8-candidates.md`.
+
+---
+
 ## v1.6 — 22 November 2026
 
 **Basis:** sixth technical review, plus the first executable counterpart to the document.

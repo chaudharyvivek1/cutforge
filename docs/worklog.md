@@ -17,7 +17,8 @@ Each version is a full standalone specification answering one external technical
 | v1.4 | Fourth technical review | "Architecture settled; a boundary remained" | The conform map (§5.9), sound that follows its picture (§5.11), remapped captions (§5.10), tolerances in milliseconds (§5.12), op inverses (§6.6), reconciled unit economics (§12.11), erasure propagation (§16.6), asset provenance (§6.8) |
 | v1.5 | Fifth technical review | "Rules right; edge cases untested" | VFR map proved (§5.9.4), atempo to the sample (§5.11), transition handles at speed (§5.7), tempo grids that scale (§5.10), erasure release paths (§16.6.1), storage and egress costed (§20.3) |
 | v1.6 | Sixth technical review | "Rules right; now run them" | A 29-test conformance suite (`tests/`), audio handles to the sample (§5.7), the VFR map under speed (§5.9.5), one duration field instead of two (§6.2), jurisdictional erasure deadlines (§16.6.1), tiered egress (§20.3) |
-| v1.7 | *Not started* | — | The six open findings in `docs/reviews/v1.7-candidates.md` |
+| v1.7 | Seventh technical review | "Rules executed; now prove the translation" | A reference compiler under golden files (§19.1), the VFR threshold either side (§5.4), the erasure schema (§13.3, §16.6.1), `speed` bounded in the schema (§6.4), the 95th-percentile example (§20.3), and a static migration check (§13.5) |
+| v1.8 | *Not started* | — | The six open findings in `docs/reviews/v1.8-candidates.md` |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -121,6 +122,33 @@ The §0 caption had been reading "Fourth-review findings" since v1.5, because th
 
 **One test expectation was wrong and one claim was imprecise.** A duration-ladder case labelled "-2.0%" was actually 2.0015% and belonged in the repair band; and the precision rule quoted a specific ratio's drift (3.7 is exact at two decimals, so it drifts zero) where it needed the bound — 10⁻ᵈ × N samples. Both are recorded because they are the same lesson: a test that agrees with a wrong number is worse than no test.
 
+## 2e. The v1.7 round
+
+v1.7 is where the document's own example was compiled rather than described, and the compiler disagreed with the document within the hour.
+
+| # | Commit | What it did |
+|---|---|---|
+| 40 | `test: add the reference compiler and golden graph` | `tests/compiler.py`, `tests/golden/appendix_a.graph`, 12 tests |
+| 41 | `test: test the VFR threshold either side` | `near_threshold()` and the 0.9/1.0/1.1 per cent cases |
+| 42 | `ci: run all four checks on every push` | `.github/workflows/verify.yml`, including the round trip from the `.docx` |
+| 43 | `docs(spec): add the v1.7 source` | 19 anchored edits; §5.9.5's sibling work, the erasure schema, the scoped composite-key rule |
+| 44 | `build: add the migration checker` | `build/check_sql.py` — parses the DDL, checks tenant keys and RLS coverage |
+| 45 | `fix(build): a blank line ended a code block on extraction` | The extractor had truncated every listing with a blank line since v1.1 |
+| 46 | `docs(spec): build v1.7 and archive v1.6` | 59 pages, 43 tables, 17 tables in the migration |
+| 47 | `docs: release notes for v1.7` | Changelog, version line, this section |
+
+**Four defects found, none by the checks that existed before this round.**
+
+The compiler multiplied the source span by speed instead of the record duration — the exact confusion §5.9.3 exists to prevent, in code written from the section that prevents it. It produced 538 frames where 626 was right, and every rule-level test in the suite passed throughout.
+
+The migration header still said "schema, v1.4", three versions after it stopped being true, because the string lived inside a code block where no version check looked.
+
+The `erasures` table was added to §13.3 and not to the RLS loop in §14.1 — the exact failure §14.1 warns about, introduced by the version that quotes it. The SQL checker now fails on any table with a `tenant_id` that the loop does not name.
+
+And the extractor ended a code block at its first blank line, so every listing with a blank line had been silently truncated since v1.1. Six versions of round-trip checks were weaker than they appeared, and the migration check found it by reporting zero tables where the source had seventeen.
+
+**The lesson is the same one, one layer out.** v1.6's suite tested the rules and said nothing about the translation. v1.7's compiler tests the translation and says nothing about the packaging. Each layer of checking makes the next layer's absence visible, and the visible absence is always the one that was shipping.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -141,14 +169,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The conformance suite covers the rules, not the compiler or the planner | `reviews/v1.7-candidates.md` §1 | The two largest surfaces in the system |
-| The `jurisdiction` field is named and not specified | §2 | Any erasure deadline that depends on it |
-| Nothing runs the tests automatically | §3 | Verification that happens while someone remembers |
-| The VFR fixture never sits near the 1% threshold | §4 | The boundary between CFR and VFR |
-| `speed` bounds live only in the validator | §5 | Failing at parse rather than after it |
-| The CDN commitment is mentioned and unpriced | §6 | Delivery economics for a spiky workload |
+| The compiler covers only Appendix A's operations | `reviews/v1.8-candidates.md` §1 | Overlays, colour, captions — the operations with the most parameters |
+| The extractor truncated code blocks for six versions | §2 | Any round-trip claim about a listing |
+| The document build is not checked for determinism | §3 | Telling a content change from a packaging change |
+| The 95th-percentile example uses one rate | §4 | The break-even between commitment and volume pricing |
+| `speedTerm` allows 16 but the cascade may not reach it | §5 | Whether 16× is supported or merely bounded |
+| Nothing renders the document to check its layout | §6 | Split rows, collapsed builds, stale captions |
 
-Nothing in that list is architectural. Three of the six are verification debt rather than defects, and three were created by v1.6's own work — a ratio that has held since v1.4, and the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Three are verification debt, and two are consequences of v1.7's own work — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

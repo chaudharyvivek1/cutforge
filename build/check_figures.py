@@ -169,6 +169,64 @@ def main():
     # ------------------------------- 12.11  the third operating point
     check("1080p30 at the headroom point", round(float(headroom) / 8, 5), 0.00052, 1e-5)
 
+    # -------------------------------- v1.5  the VFR table map, worked
+    # A nominal-30 fps recording with one dropped frame. Conformed indices
+    # skip 3; the asset gains one frame.
+    vfr_pts = [0, 33333, 66667, 133333, 166667, 200000]
+    conformed = [round_half_away(F(pts, 1000000) * FPS_2997) for pts in vfr_pts]
+    check("VFR conformed indices", conformed, [0, 1, 2, 4, 5, 6])
+    check("VFR map is non-decreasing", all(b >= a for a, b in zip(conformed, conformed[1:])), True)
+    check("VFR map is strictly increasing here", all(b > a for a, b in zip(conformed, conformed[1:])), True)
+    check("VFR image skips an index (injective, not surjective)", 3 not in conformed, True)
+    # two packets sharing a timestamp is legal and must map to the same frame
+    same_pts = [round_half_away(F(p, 1000000) * FPS_2997) for p in [0, 33333, 33333]]
+    check("VFR map is non-decreasing when PTS repeats", same_pts, [0, 1, 1])
+    # the skipped index is filled by repeating native f2: invertibility holds within 1
+    check("VFR invertibility bound", abs(conformed[2] - 3), 1)
+    native_span = F(200000 + 33333, 1000000)
+    check("VFR conformed duration", round_half_away(native_span * FPS_2997), 7)
+    check("VFR conform delta", round_half_away(native_span * FPS_2997) - 6, 1)
+
+    # ------------------------- v1.5  atempo at ratios that do not decompose
+    R = 300
+    c_37 = F(R) * F(37, 10)
+    check("3.7x conformed consumption", c_37, 1110)
+    check("3.7x source samples", round(F(c_37) / FPS_2997 * 48000), 1777776)
+    check("3.7x output samples", round(F(R) / FPS_2997 * 48000), 480480)
+    check("3.7x ratio is exact", F(1777776, 480480), F(37, 10))
+    c_inv = round_half_away(F(R) / F(37, 10))
+    check("1/3.7x conformed consumption", c_inv, 81)
+    src_inv = F(c_inv) / FPS_2997 * 48000
+    check("1/3.7x source samples are not integral", src_inv.denominator != 1, True)
+    check("1/3.7x source samples rounded", round_half_away(src_inv), 129730)
+
+    # the precision rule: seven decimal places, not six
+    out_45s = F(1349) / FPS_2997 * 48000
+    check("6dp drift on a 45 s output", round(float(F(1, 10**6) * out_45s), 2), 2.16, 0.005)
+    check("7dp drift on a 45 s output", round(float(F(1, 10**7) * out_45s), 3), 0.216, 0.0005)
+
+    # ------------------------------- v1.5  transition handle at speed
+    for speed, expected in [(F(1), 6), (F(2), 12), (F(1, 2), 3)]:
+        check(f"handle source frames at {speed}", F(6) * speed, expected)
+
+    # -------------------------------- v1.5  storage, egress, proxies
+    check("1080p proxy GB/hour", round(12 * 3600 / 8 / 1000, 1), 5.4, 0.05)
+    check("540p proxy GB/hour", round(6 * 3600 / 8 / 1000, 1), 2.7, 0.05)
+    S = F(23, 1000)
+    E = F(9, 100)
+    storage = F(45) * S
+    egress = F(18) * E
+    analysis_hour = F(45, 3600) * P * 60
+    check("storage $/footage-hour-month", round(float(storage), 3), 1.035, 0.0005)
+    check("egress $/output-hour", round(float(egress), 2), 1.62, 0.005)
+    check("analysis $/footage-hour", round(float(analysis_hour), 3), 0.375, 0.0005)
+    check("storage / analysis", round(float(storage / analysis_hour), 2), 2.76, 0.005)
+
+    # ---------------------------------- v1.5  beat grid scales with speed
+    beat_frames = F(60, 124) * FPS_2997
+    check("124 BPM beat interval frames", round(float(beat_frames), 4), 14.5016, 1e-4)
+    check("124 BPM at 1.05x", round(float(beat_frames / F(105, 100)), 4), 13.8111, 1e-4)
+
     # ------------------------------------------------ report
     print(f"{CHECKS} figures checked against first principles.")
     if FAILURES:

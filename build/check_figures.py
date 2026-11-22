@@ -242,6 +242,29 @@ def main():
     check("124 BPM beat interval frames", round(float(beat_frames), 4), 14.5016, 1e-4)
     check("124 BPM at 1.05x", round(float(beat_frames / F(105, 100)), 4), 13.8111, 1e-4)
 
+    # ------------------------------ v1.6  the audio handle, rounded once
+    check("audio handle at half: samplesFor(6)", round_half_away(F(6) / FPS_2997 * 48000), 9610)
+    check("audio handle doubled (the bug)", 2 * round_half_away(F(6) / FPS_2997 * 48000), 19220)
+    check("audio handle converted once: samplesFor(12)", round_half_away(F(12) / FPS_2997 * 48000), 19219)
+    check("the two differ", 19219 != 19220, True)
+
+    # ------------------------- v1.6  the table map walked at 2x
+    conf = [round_half_away(F(p, 1000000) * FPS_2997)
+            for p in [0, 33333, 66667, 133333, 166667, 200000]]
+    walk = []
+    for r in range(4):
+        c = r * 2
+        walk.append(max(i for i, cc in enumerate(conf) if cc <= c))
+    check("2x walk visits", walk, [0, 2, 3, 5])
+    check("2x walk skips f1 and f4", 1 not in walk and 4 not in walk, True)
+
+    # ------------------------------------- v1.6  tiered egress
+    def egress(gb):
+        return min(gb, 1000) * F(9, 100) + max(0, gb - 1000) * F(5, 100)
+    check("egress, first TB", float(egress(1000)), 90.0, 0.005)
+    check("egress, 3 TB", float(egress(3000)), 190.0, 0.005)
+    check("blended per TB at 3 TB", round(float(egress(3000) / 3), 2), 63.33, 0.005)
+
     # ------------------------------------------------ report
     print(f"{CHECKS} figures checked against first principles.")
     if FAILURES:

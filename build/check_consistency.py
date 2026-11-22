@@ -116,6 +116,49 @@ def main():
     if re.search(r'"speed":\s*\{[^}]*"num":\s*\{\s*"type":"integer"', text, re.S):
         fail("speed.num is an integer; §5.1 requires rates to be decimal strings")
 
+    # ------------------------------------- the §0 caption names its own review
+    # v1.5 shipped a table captioned "Fourth-review findings" because the
+    # caption was replaced separately from the rows and only one of them moved.
+    ORDINALS = {4: "Fourth", 5: "Fifth", 6: "Sixth", 7: "Seventh",
+                8: "Eighth", 9: "Ninth", 10: "Tenth", 11: "Eleventh"}
+    if version:
+        minor = int(version.split(".")[1])
+        want = ORDINALS.get(minor)
+        if want:
+            cap = re.search(r"Table 0  \|  (\w+)-review findings", text)
+            if not cap:
+                fail("§0 table caption does not name a review ordinal")
+            elif cap.group(1) != want:
+                fail(f"§0 caption says {cap.group(1)}-review; version {version} is {want}")
+
+    # ------------------------ a derived field must not be stored or accepted
+    # §6.2 derives include_trailing_audio; v1.5 stored it as well.
+    for n, line in enumerate(lines, 1):
+        if "include_trailing_audio" in line:
+            if "NOT NULL" in line or '"type":"boolean"' in line.replace(" ", ""):
+                fail(f"include_trailing_audio is stored or accepted at line {n}; §6.2 derives it")
+
+    # ------------------------------------------- code fences must balance
+    # An insertion that closes a fence and opens another, without consuming
+    # the original closing fence, silently turns the rest of the document
+    # into one code block. The docx build then reports nine tables instead
+    # of forty-three and everything after it renders as monospace.
+    fences = [n for n, l in enumerate(lines, 1) if l.strip() == "```"]
+    if len(fences) % 2:
+        fail(f"unbalanced code fences: {len(fences)} markers, so the document "
+             f"has one unclosed block starting at line {fences[-1]}")
+    else:
+        # A long block is legitimate — the migration is ~280 lines. A block
+        # that swallows a heading or a table is not: neither ever appears
+        # inside code, so seeing one means a fence went missing.
+        for start, end in zip(fences[::2], fences[1::2]):
+            for n in range(start, end - 1):
+                body = lines[n]
+                if body.startswith("# ") or body.startswith("## ") or body.startswith("### "):
+                    fail(f"code block from line {start} to {end} contains the heading "
+                         f"'{body.strip()[:40]}' at line {n + 1}; a closing fence is missing")
+                    break
+
     # ------------------------------------------------ requirement ID integrity
     # A row inserted in the wrong place once produced two FR-15 rows and a
     # dangling reference. Cheap to check, and it fails loudly.

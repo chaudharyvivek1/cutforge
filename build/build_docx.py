@@ -225,8 +225,12 @@ def pipe_table(doc, rows):
         style_run(p.add_run(text.replace("**", "")), size=7.8, bold=True)
         cell_shade(cell, HEADER_BG)
     table.rows[0]._tr.get_or_add_trPr().append(OxmlElement("w:tblHeader"))
+    for row in table.rows:                       # a row split across a page
+        row._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))   # reads as two
     for row in data:
-        cells = table.add_row().cells
+        new_row = table.add_row()
+        new_row._tr.get_or_add_trPr().append(OxmlElement("w:cantSplit"))
+        cells = new_row.cells
         for i, text in enumerate(row[:len(header)]):
             p = cells[i].paragraphs[0]
             p.paragraph_format.space_after = Pt(1)

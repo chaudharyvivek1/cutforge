@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.1 — 22 November 2026
+
+**Basis:** eleventh technical review.
+**Theme:** the engine runs. A job service with a hold and a cancellation, the repair loop, and the compiler's own fixtures rendered rather than described.
+
+| Finding | Resolved by |
+|---|---|
+| The engine had never run as a service | `tests/service.py` — HTTP job service with idempotency, tenant-scoped 404, a hold that expires to failed, an answer that resumes, a recorded degraded result, and a terminal cancellation |
+| Frame hashes covered hand-written graphs | `tests/assets.py` generates conformed assets; the Appendix A graph and the audio bus are compiled and rendered. The first run found the graph had no `[v_out]` at all |
+| The repair loop was unimplemented | `tests/repair.py` — repair within two attempts, `REPAIR_EXHAUSTED`, and a named budget code including on the first call |
+| Identity accuracy was unmeasured | `tests/accuracy.py` computes the rates from labelled distances, and a test proves a bad threshold fails |
+| The Remotion path was `drawtext` | §11.7 now states what is built and what is not, rather than implying a capability |
+| Per-shot matching had no acceptance test | `tests/colour.py` implements CIE76; a two per cent gain lands under ΔE 2.0 and a twenty per cent one does not |
+
+Also: the compiler now folds the primary track into a `[v_out]` label. Before this, it emitted one xfade per transition and never joined them, so the graph could not be opened by ffmpeg — invisible to eight golden files and found by the first real render.
+
+**Still open after v2.1:** six findings, in `docs/reviews/v2.2-candidates.md`.
+
+---
+
 ## v2.0 — 22 November 2026
 
 **Basis:** tenth technical review. All six findings were verification debt: the rule was right and the reference implementation had not reached it.

@@ -71,7 +71,14 @@ def score(plan, request=None):
     # it was allowed to use is what the cut density is measured against.
     available = len(candidates) or len(lengths)
     wanted = min(wanted, available)
-    pacing_score = round(min(1.0, len(lengths) / wanted), 3)
+    too_few = min(1.0, len(lengths) / wanted)
+    # Too many cuts is a failure the v2.13 rubric could not see: forty cuts in
+    # forty-five seconds scored a perfect 1.0 because pacing only asked whether
+    # there were enough. A shot shorter than a second and a half on average
+    # leaves nothing to read, and the calibration set caught it.
+    mean = float(total) / len(lengths) / float(PROJECT_FPS)
+    too_many = 0.0 if mean < 1.5 else 1.0
+    pacing_score = round(min(too_few, too_many), 3)
 
     criteria = {
         "hook": hook_score,

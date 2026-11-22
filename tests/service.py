@@ -63,14 +63,39 @@ def make_handler(store, tokens=None):
                 if not self.server.buckets.take(tenant):
                     return self._send(429, {"error": {"code": "RATE_LIMITED",
                                                       "retry_after": self.server.buckets.retry_after(tenant)}})
+                payload, quality = self._quality_gate(body)
                 job, created = store.submit(tenant, body.get("kind", "plan"),
                                             self.headers.get("Idempotency-Key"),
-                                            body.get("payload"))
+                                            payload)
                 return self._send(202 if created else 200,
-                                  {"job_id": job["id"], "state": job["state"]})
+                                  {"job_id": job["id"], "state": job["state"],
+                                   "quality": quality})
             if len(parts) == 4 and parts[1] == "jobs" and parts[3] == "answer":
                 return self._answer(parts, body)
             return self._send(404, {"error": "not found"})
+
+        def _quality_gate(self, body):
+            """§7.5: a plan that validates and scores badly must not ship.
+
+            v2.13 built the repair and nothing called it. The gate runs it on
+            submission, records what it changed, and refuses a plan it cannot
+            bring to an acceptable score rather than rendering it silently.
+            """
+            payload = body.get("payload")
+            if body.get("kind", "plan") != "plan" or not isinstance(payload, dict):
+                return payload, None
+            plan = payload.get("plan")
+            if not plan:
+                return payload, None
+            import repair as Rp
+            import rubric as Rb
+            before = Rb.score(plan, payload.get("request") or {})
+            repaired = Rp.apply_quality_repair(plan, payload.get("request") or {})
+            after = Rb.score(repaired, payload.get("request") or {})
+            gate = {"before": before["verdict"], "after": after["verdict"],
+                    "total": after["total"],
+                    "repairs": Rp.quality_diff(plan, payload.get("request") or {})["repairs"]}
+            return dict(payload, plan=repaired), gate
 
         def _answer(self, parts, body):
             job_id = parts[2]

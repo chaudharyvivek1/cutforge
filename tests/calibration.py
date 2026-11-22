@@ -60,6 +60,32 @@ def labelled_set():
          "label": "bad", "why": "a five-frame hook is a flash frame"},
         {"plan": {"structure": []},
          "label": "bad", "why": "no structure at all"},
+
+        # ---- the second ten, added in v2.14 and labelled before scoring
+        {"plan": {"structure": [shot(0, 45), shot(45, 500), shot(500, 900),
+                                shot(900, 1349)]},
+         "label": "good", "why": "a one-and-a-half second hook, three cuts, on target"},
+        {"plan": {"structure": even(1349, 7)},
+         "label": "bad", "why": "seven even cuts: a three-second hook needs an uneven share"},
+        {"plan": {"structure": [shot(0, 120), shot(120, 1349)]},
+         "label": "bad", "why": "a four-second opening is past the point a hook holds"},
+        {"plan": {"structure": [shot(0, 90), shot(90, 1349)]},
+         "label": "good", "why": "a three-second hook and a long payoff, deliberately slow"},
+        {"plan": {"structure": [shot(0, 90)] + [shot(90 + 70 * i, 90 + 70 * (i + 1))
+                                                for i in range(18)]},
+         "label": "good", "why": "eighteen cuts: fast, but the reel is a montage"},
+        {"plan": {"structure": [shot(0, 2), shot(2, 1349)]},
+         "label": "bad", "why": "a two-frame opening is a flash"},
+        {"plan": {"structure": even(1349, 2)},
+         "label": "bad", "why": "two even cuts: a twenty-two second opening"},
+        {"plan": {"structure": [shot(0, 60), shot(60, 120), shot(120, 180),
+                                shot(180, 1349)]},
+         "label": "good", "why": "three quick cuts then a long payoff"},
+        {"plan": {"structure": even(1349, 40)},
+         "label": "bad", "why": "forty cuts in forty-five seconds is a slideshow"},
+        {"plan": {"structure": [shot(0, 90), shot(90, 700), shot(700, 1300)]},
+         "label": "good",
+         "why": "fifty frames short — 3.7 per cent, inside delivery tolerance"},
     ]
 
 
@@ -94,3 +120,17 @@ def separation(request=None):
         "tied": tied,
         "separation": round((ordered + 0.5 * tied) / len(pairs), 3) if pairs else 0.0,
     }
+
+
+def disagreements(request=None):
+    """Where the rubric and the labels part company.
+
+    A calibration set that never disagrees is a set the rubric already agrees
+    with — either because the labels were written by looking at the scores, or
+    because the rubric learned the labels. Either way it proves nothing. This
+    reports the disagreements so they can be read rather than assumed absent.
+    """
+    result = separation(request)
+    return [r for r in result["scored"]
+            if (r["label"] == "good" and r["verdict"] != "acceptable")
+            or (r["label"] == "bad" and r["verdict"] == "acceptable")]

@@ -83,7 +83,8 @@ class TestBuildDeterminism(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
-@unittest.skipUnless(shutil.which("soffice"), "LibreOffice is not installed")
+@unittest.skipUnless(shutil.which("soffice"),
+                     "LibreOffice (soffice) is not on PATH — the rendered-page checks DID NOT RUN")
 class TestLayout(unittest.TestCase):
     """A smoke test on the rendered page, which no text check can replace."""
 

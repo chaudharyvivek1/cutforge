@@ -97,12 +97,89 @@ class TestWipe(GoldenMixin, unittest.TestCase):
         self.assertIn("offset=0.100100", C.compile_ir(ir))
 
 
+class TestLut(GoldenMixin, unittest.TestCase):
+    """§11.4 — the creative grade sits at the end of the chain."""
+
+    fixture = staticmethod(C.lut_ir)
+    name = "lut"
+
+    def test_lut_is_applied_last(self):
+        graph = C.compile_ir(C.lut_ir())
+        line = next(l for l in graph.split("\n") if "[v_c1]" in l)
+        self.assertTrue(line.rstrip(";").endswith("[v_c1]"))
+        self.assertGreater(line.index("lut3d"), line.index("scale="))
+
+    def test_lut_is_referenced_not_pathed(self):
+        # §9.3: no tool takes a path. The graph must not contain a directory.
+        graph = C.compile_ir(C.lut_ir())
+        self.assertIn("lut3d=file=lut_warm_07.cube", graph)
+        self.assertNotIn("/", graph)
+
+
+class TestAudioBus(GoldenMixin, unittest.TestCase):
+    """§11.1 — one mixed, loudness-normalised bus, not one stream per track."""
+
+    fixture = staticmethod(C.audio_mix_ir)
+    name = "audio_mix"
+
+    def test_two_tracks_are_mixed(self):
+        graph = C.compile_ir(C.audio_mix_ir())
+        self.assertIn("amix=inputs=2:normalize=0", graph)
+
+    def test_the_bus_is_normalised(self):
+        graph = C.compile_ir(C.audio_mix_ir())
+        self.assertIn("loudnorm=I=-14:TP=-1.5:LRA=11", graph)
+        self.assertEqual(graph.count("loudnorm"), 1)
+
+    def test_a_single_track_is_not_mixed(self):
+        graph = C.compile_ir(C.appendix_a_ir() + {}) if False else C.compile_ir(C._base_ir())
+        self.assertNotIn("amix", graph)
+
+
+class TestInverseMap(GoldenMixin, unittest.TestCase):
+    """§12.6 — an SDR source on an HDR timeline is expanded, not retagged."""
+
+    fixture = staticmethod(C.sdr_to_hdr_ir)
+    name = "sdr_to_hdr"
+
+    def test_hlg_project_expands_to_hlg(self):
+        graph = C.compile_ir(C.sdr_to_hdr_ir())
+        self.assertIn("t=arib-std-b67", graph)
+        self.assertIn("p=bt2020", graph)
+
+    def test_pq_project_expands_to_pq(self):
+        ir = C.sdr_to_hdr_ir()
+        ir["project"]["color_space"] = "rec2020-pq"
+        self.assertIn("t=smpte2084", C.compile_ir(ir))
+
+    def test_ten_bit_is_preserved(self):
+        self.assertIn("yuv420p10le", C.compile_ir(C.sdr_to_hdr_ir()))
+
+    def test_the_operator_comes_from_the_manifest(self):
+        ir = C.hdr_ir()
+        # merge, do not replace: the metadata also carries the asset manifest
+        ir["metadata"]["tonemap"] = {"operator": "mobius", "peak": 203}
+        graph = C.compile_ir(ir)
+        self.assertIn("tonemap=mobius", graph)
+        self.assertIn("npl=203", graph)
+
+
+class TestGoldenProvenance(unittest.TestCase):
+    """A golden nobody can explain is a golden nobody should trust."""
+
+    def test_every_golden_is_documented(self):
+        readme = (GOLDEN / "README.md").read_text()
+        for path in sorted(GOLDEN.glob("*.graph")):
+            self.assertIn(path.name, readme, f"{path.name} is not in golden/README.md")
+
+
 class TestEffectCoverage(unittest.TestCase):
     """§6.4 — an enum value is a promise the compiler keeps."""
 
     def test_unimplemented_effect_is_loud(self):
+        # lut is implemented from v1.9; colour grading is not yet.
         ir = C.overlay_ir()
-        ir["sequence"]["tracks"][0]["items"][0]["effects"].append({"type": "lut"})
+        ir["sequence"]["tracks"][0]["items"][0]["effects"].append({"type": "color"})
         with self.assertRaises(NotImplementedError):
             C.compile_ir(ir)
 

@@ -55,7 +55,33 @@ def compile_ir(ir):
     graph = ";\n".join(lines)
     if transitions:
         graph += ";\n" + transitions
+
+    bus = _audio_bus(seq)
+    if bus:
+        graph += ";\n" + bus
     return graph
+
+
+def _audio_bus(seq):
+    """§11.1: one mixed, loudness-normalised bus, not one stream per track.
+
+    v1.8 emitted a chain per audio item and never mixed them, so a timeline
+    with music and dialogue produced two streams and the renderer took the
+    first. The mix is where ducking and normalisation belong.
+    """
+    labels = []
+    for track in seq["tracks"]:
+        if track["kind"] != "audio" or track.get("enabled", True) is False:
+            continue
+        labels.extend(f"[a_{item['id']}]" for item in track["items"]
+                      if item.get("kind") == "clip")
+    if not labels:
+        return ""
+    if len(labels) == 1:
+        return f"{labels[0]}loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]"
+    return ("".join(labels)
+            + f"amix=inputs={len(labels)}:normalize=0:dropout_transition=0,"
+              "loudnorm=I=-14:TP=-1.5:LRA=11[a_mix]")
 
 
 def _video_item(item, fps, width, height, ir):
@@ -92,9 +118,15 @@ def _video_item(item, fps, width, height, ir):
         chain.append(f"setpts=PTS/{float(speed)}")
     chain.append(f"scale={width}:{height}")
 
-    # §12.6: an HDR source on an SDR timeline is tone-mapped, never retagged
-    if ir["project"].get("color_space") == "rec709" and src.get("transfer") in ("arib-std-b67", "smpte2084"):
-        chain.extend(_tonemap(src["transfer"]))
+    # §12.6: colour is converted, never retagged, and the operator comes from
+    # the manifest because two tone maps of the same source are different
+    # pictures (§11.6).
+    project_cs = ir["project"].get("color_space", "rec709")
+    transfer = src.get("transfer")
+    if project_cs == "rec709" and transfer in ("arib-std-b67", "smpte2084"):
+        chain.extend(_tonemap(transfer, ir.get("metadata", {}).get("tonemap", {})))
+    elif project_cs != "rec709" and transfer is None:
+        chain.extend(_inverse_map(project_cs))
 
     for effect in item.get("effects", []) or []:
         chain.extend(_effect(effect, fps))
@@ -102,14 +134,38 @@ def _video_item(item, fps, width, height, ir):
     return [f"[{_input_index(ir, item['asset'])}:v]" + ",".join(chain) + f"[v_{rid}]"]
 
 
-def _tonemap(transfer):
-    """§12.6: linearise, compress highlights, map BT.2020 into BT.709, strip SEI."""
+def _tonemap(transfer, settings):
+    """§12.6: linearise, compress highlights, map BT.2020 into BT.709, strip SEI.
+
+    The operator and the reference white come from the manifest, not from a
+    constant here: a render is only reproducible if the tone map it used is
+    recorded (§11.6).
+    """
     tin = "arib-std-b67" if transfer == "arib-std-b67" else "smpte2084"
-    return [f"zscale=tin={tin}:t=linear:npl=100", "format=gbrpf32le",
-            "zscale=p=bt709", "tonemap=hable:desat=0",
+    operator = settings.get("operator", "hable")
+    peak = settings.get("peak", 100)
+    desat = settings.get("desat", 0)
+    return [f"zscale=tin={tin}:t=linear:npl={peak}", "format=gbrpf32le",
+            "zscale=p=bt709", f"tonemap={operator}:desat={desat}",
             "zscale=t=bt709:m=bt709:r=tv", "format=yuv420p",
             "sidedata=mode=delete:type=MASTERING_DISPLAY_METADATA",
             "sidedata=mode=delete:type=CONTENT_LIGHT_LEVEL"]
+
+
+def _inverse_map(project_color_space):
+    """§12.6: an SDR source on an HDR timeline goes the other way.
+
+    This is a display-referred expansion, not an inverse of a tone map: the
+    scene metadata an HDR grade would carry does not exist for an SDR source,
+    so the result is a plausible HDR picture rather than the original one.
+    """
+    if project_color_space == "rec2020-pq":
+        transfer = "smpte2084"
+    else:
+        transfer = "arib-std-b67"
+    return ["zscale=t=linear:npl=100", "format=gbrpf32le",
+            f"zscale=p=bt2020:t={transfer}:m=bt2020nc:r=tv",
+            "format=yuv420p10le"]
 
 
 def _effect(effect, fps):
@@ -123,6 +179,11 @@ def _effect(effect, fps):
         if "rotate" in effect:
             chain.append(f"rotate={effect['rotate']}*PI/180")
         return chain
+    if kind == "lut":
+        # §11.4: the creative grade sits at the end of the chain. The file is a
+        # manifest reference, never a path — no tool takes a path (§9.3).
+        ref = effect.get("ref", "lut_identity")
+        return [f"lut3d=file={ref}.cube:interp=tetrahedral"]
     if kind in ("fade_in", "fade_out"):
         direction = "in" if kind == "fade_in" else "out"
         frames = effect.get("frames", 12)
@@ -250,4 +311,35 @@ def wipe_ir():
     ir = _base_ir()
     ir["sequence"]["tracks"][0]["transitions"][0] = {
         "between": ["c1", "c2"], "type": "wipe", "frames": 12, "align": "start"}
+    return ir
+
+
+def lut_ir():
+    """A creative LUT at the end of the chain, referenced by manifest id."""
+    ir = _base_ir()
+    ir["sequence"]["tracks"][0]["items"][0]["effects"] = [
+        {"type": "lut", "ref": "lut_warm_07"}]
+    return ir
+
+
+def audio_mix_ir():
+    """A music bed and dialogue: one mixed, normalised bus, not two streams."""
+    ir = _base_ir()
+    ir["sequence"]["tracks"].append({
+        "id": "A1", "kind": "audio",
+        "items": [{"kind": "clip", "id": "a1", "asset": "ast_b07",
+                   "source": {"in_sample": 0, "out_sample": 480480},
+                   "record": {"in": 0, "out": 300}}]})
+    ir["sequence"]["tracks"].append({
+        "id": "A2", "kind": "audio",
+        "items": [{"kind": "clip", "id": "a2", "asset": "ast_c13",
+                   "source": {"in_sample": 0, "out_sample": 480480},
+                   "record": {"in": 0, "out": 300}}]})
+    return ir
+
+
+def sdr_to_hdr_ir():
+    """An SDR source on an HDR timeline: expanded, and said to be an expansion."""
+    ir = _base_ir()
+    ir["project"]["color_space"] = "rec2020-hlg"
     return ir

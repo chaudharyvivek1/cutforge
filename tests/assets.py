@@ -69,6 +69,7 @@ PROJECT_FPS = F(30000, 1001)
 def appendix_a_assets(directory):
     """Build the four conformed sources and return them by asset id."""
     directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
     return {name: video(directory / f"{name}.mp4", frames, PROJECT_FPS,
                         pattern=pattern, vf=vf)
             for name, (frames, pattern, vf) in APPENDIX_A.items()}

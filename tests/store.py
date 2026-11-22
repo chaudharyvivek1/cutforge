@@ -337,13 +337,17 @@ class Store:
             " AND params_hash=?", (tenant, asset_id, kind, params_hash)).fetchone()
         return dict(row) if row else None
 
-    def expire_segments(self, older_than_seconds=0.0, now=None):
+    SEGMENT_RETENTION_SECONDS = 3600.0
+
+    def expire_segments(self, older_than_seconds=None, now=None):
         """Segments are a cache, not an asset: they must expire (§11.5).
 
         v2.9 published segments and never removed them, so a tenant's storage
         grew with every render attempt — a cost bug wearing a cache's clothes.
         """
         now = self.clock() if now is None else now
+        if older_than_seconds is None:
+            older_than_seconds = self.SEGMENT_RETENTION_SECONDS
         with self.tx() as db:
             removed = db.execute(
                 "DELETE FROM asset_derivatives WHERE kind='segment' AND created_at<=?",
@@ -523,6 +527,10 @@ class Worker:
         self.store = store
         self.name = name
         self.segments = segments
+
+    def idle_sweep(self):
+        """Called when the queue is empty: a mechanism nobody runs is not a policy."""
+        return self.store.expire_segments()
 
     def run_once(self):
         job = self.store.claim(self.name)

@@ -1,0 +1,49 @@
+{
+  "source": "recorded from the template planner, standing in for a model",
+  "_note": "A recorded response per pass, so the two-pass plumbing is testable without a budget.",
+  "orient": {
+    "goal": "45s vertical product reel",
+    "duration_target_ms": 45011,
+    "aspect": "9:16",
+    "structure": [
+      {
+        "beat": "hook",
+        "record": [
+          0,
+          675
+        ],
+        "asset": "ast_a91"
+      },
+      {
+        "beat": "payoff",
+        "record": [
+          675,
+          1349
+        ],
+        "asset": "ast_c13"
+      }
+    ]
+  },
+  "compile": {
+    "ops": [
+      {
+        "op": "add_clip",
+        "clip": "c1",
+        "asset": "ast_a91",
+        "record": {
+          "in": 0,
+          "out": 675
+        }
+      },
+      {
+        "op": "add_clip",
+        "clip": "c2",
+        "asset": "ast_c13",
+        "record": {
+          "in": 675,
+          "out": 1349
+        }
+      }
+    ]
+  }
+}

@@ -81,7 +81,34 @@ def render_chunked(asset_id, segments, publisher, params="seg"):
 
 
 # --------------------------------------------------------------- encoded path
-def encode_segment(graph, inputs, out_path, crf=18):
+NVENC = "h264_nvenc"
+
+
+def has_encoder(name):
+    """Is the encoder listed by this build? Necessary, not sufficient."""
+    import subprocess
+    result = subprocess.run([R.FFMPEG, "-hide_banner", "-encoders"],
+                            capture_output=True, text=True)
+    return name in result.stdout
+
+
+def usable_encoder(name):
+    """Does a one-frame encode actually work?
+
+    v2.11's first guard asked only whether ffmpeg *listed* h264_nvenc, which
+    it does on every build — the failure is a missing device, and it appears
+    as exit code 255 halfway through a render. Listing and working are
+    different questions and only the second one matters.
+    """
+    import subprocess
+    result = subprocess.run(
+        [R.FFMPEG, "-hide_banner", "-loglevel", "error", "-f", "lavfi",
+         "-i", "testsrc2=size=64x64:rate=1:duration=1", "-frames:v", "1",
+         "-c:v", name, "-f", "null", "-"], capture_output=True, text=True)
+    return result.returncode == 0
+
+
+def encode_segment(graph, inputs, out_path, crf=18, codec="libx264"):
     """Encode one chunk to a file with a closed GOP.
 
     Raw-frame concatenation proves the *graph*; a customer receives a file, so
@@ -94,10 +121,20 @@ def encode_segment(graph, inputs, out_path, crf=18):
     for path in inputs:
         cmd += ["-i", str(path)]
     cmd += ["-filter_complex", graph, "-map", "[v_out]",
-            "-c:v", "libx264", "-preset", "ultrafast", "-crf", str(crf),
+            "-c:v", codec,
+            "-preset", "ultrafast" if codec == "libx264" else "p4",
+            "-crf" if codec == "libx264" else "-cq", str(crf),
             "-g", "48", "-keyint_min", "48", "-sc_threshold", "0",
             "-force_key_frames", "expr:gte(t,0)", out_path]
-    subprocess.run(cmd, check=True, capture_output=True)
+    if codec == NVENC and not usable_encoder(NVENC):
+        # §12.3's whole model rests on this encoder. A machine without a device
+        # must say so, not fall back to a CPU encode and report success.
+        raise RuntimeError("h264_nvenc is not usable on this machine "
+                           f"(listed: {has_encoder(NVENC)}, no working device)")
+    try:
+        subprocess.run(cmd, check=True, capture_output=True)
+    except Exception as error:
+        raise RuntimeError(f"encode failed with {codec}: {error}") from error
     return out_path
 
 

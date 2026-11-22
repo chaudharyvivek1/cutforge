@@ -11,6 +11,9 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+import auth as A
+import metrics as M
+
 
 def job_view(row):
     """The API's view of a job row — derived fields only, never stored twice."""
@@ -25,7 +28,7 @@ def job_view(row):
     }
 
 
-def make_handler(store, tenant="tnt_test"):
+def make_handler(store, tokens=None):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
             pass
@@ -39,7 +42,13 @@ def make_handler(store, tenant="tnt_test"):
             self.wfile.write(payload)
 
         def _tenant(self):
-            return self.headers.get("X-Tenant", tenant)
+            """§14.5: the tenant comes from the token; a header may only narrow."""
+            try:
+                return A.resolve(self.headers, self.server.tokens,
+                                 self.headers.get("X-Tenant"))
+            except A.AuthError as error:
+                self._send(error.status, {"error": {"code": error.code}})
+                return None
 
         def do_POST(self):
             length = int(self.headers.get("Content-Length") or 0)
@@ -72,6 +81,16 @@ def make_handler(store, tenant="tnt_test"):
 
         def do_GET(self):
             parts = [p for p in self.path.strip("/").split("/") if p]
+            if parts == ["metrics"]:
+                pass
+            if parts == ["metrics"]:
+                body = M.render(store).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; version=0.0.4")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if len(parts) == 3 and parts[:2] == ["v1", "jobs"]:
                 store.expire_holds()
                 job = store.get(self._tenant(), parts[2])
@@ -82,6 +101,8 @@ def make_handler(store, tenant="tnt_test"):
 
         def do_DELETE(self):
             parts = [p for p in self.path.strip("/").split("/") if p]
+            if parts == ["metrics"]:
+                pass
             if len(parts) == 3 and parts[:2] == ["v1", "jobs"]:
                 job = store.cancel(self._tenant(), parts[2])
                 if job is None:
@@ -95,13 +116,14 @@ def make_handler(store, tenant="tnt_test"):
 class Server:
     """A context manager, so a test cannot leak a listening socket."""
 
-    def __init__(self, store, tenant="tnt_test"):
+    def __init__(self, store, tokens):
         self.store = store
-        self.tenant = tenant
+        self.tokens = tokens
         self.httpd = None
 
     def __enter__(self):
-        self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(self.store, self.tenant))
+        self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(self.store, self.tokens))
+        self.httpd.tokens = self.tokens
         self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
         self.thread.start()
         self.url = f"http://127.0.0.1:{self.httpd.server_address[1]}"

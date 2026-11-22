@@ -1,0 +1,244 @@
+{
+  "_note": "Recorded so the \u00a77.1 acceptance path has a corpus to replay. It is evidence about the DSL and the validator, not about a model.",
+  "plans": [
+    {
+      "attempt": 1,
+      "id": "p01",
+      "outcome": "accepted",
+      "plan": {
+        "aspect": "9:16",
+        "duration_ladder": {
+          "fallback": "extend_payoff",
+          "fallback_above_ms": 2251,
+          "repair_above_ms": 900
+        },
+        "duration_target_ms": 45011,
+        "goal": "45s vertical product reel",
+        "must_avoid": [
+          "person:ceo"
+        ],
+        "must_keep": [
+          "product close-up"
+        ],
+        "pacing": {
+          "on_beat": false,
+          "tolerance_ms": 120
+        },
+        "structure": [
+          {
+            "asset": "ast_a91",
+            "beat": "hook",
+            "record": [
+              0,
+              674
+            ],
+            "source": [
+              1440,
+              1751
+            ]
+          },
+          {
+            "asset": "ast_c13",
+            "beat": "payoff",
+            "record": [
+              674,
+              1349
+            ],
+            "source": [
+              60,
+              254
+            ]
+          }
+        ]
+      },
+      "request_name": "three_shot_reel"
+    },
+    {
+      "attempt": 1,
+      "id": "p02",
+      "outcome": "accepted",
+      "plan": {
+        "aspect": "9:16",
+        "duration_ladder": {
+          "fallback": "extend_payoff",
+          "fallback_above_ms": 500,
+          "repair_above_ms": 200
+        },
+        "duration_target_ms": 10010,
+        "goal": "10s teaser",
+        "must_avoid": [],
+        "must_keep": [],
+        "pacing": {
+          "on_beat": false,
+          "tolerance_ms": 120
+        },
+        "structure": [
+          {
+            "asset": "ast_a91",
+            "beat": "hook",
+            "record": [
+              0,
+              150
+            ],
+            "source": [
+              0,
+              240
+            ]
+          },
+          {
+            "asset": "ast_c13",
+            "beat": "payoff",
+            "record": [
+              150,
+              300
+            ],
+            "source": [
+              0,
+              240
+            ]
+          }
+        ]
+      },
+      "request_name": "short_hook"
+    },
+    {
+      "attempt": 1,
+      "id": "p03",
+      "outcome": "accepted",
+      "plan": {
+        "aspect": "9:16",
+        "duration_ladder": {
+          "fallback": "extend_payoff",
+          "fallback_above_ms": 250,
+          "repair_above_ms": 100
+        },
+        "duration_target_ms": 5005,
+        "goal": "5s end card",
+        "must_avoid": [],
+        "must_keep": [
+          "logo"
+        ],
+        "pacing": {
+          "on_beat": false,
+          "tolerance_ms": 120
+        },
+        "structure": [
+          {
+            "asset": "ast_a91",
+            "beat": "hook",
+            "record": [
+              0,
+              150
+            ],
+            "source": [
+              2160,
+              2400
+            ]
+          }
+        ]
+      },
+      "request_name": "single_shot"
+    },
+    {
+      "attempt": 1,
+      "id": "p04",
+      "outcome": "rejected",
+      "plan": {
+        "aspect": "9:16",
+        "duration_ladder": {
+          "fallback": "extend_payoff",
+          "fallback_above_ms": 2251,
+          "repair_above_ms": 900
+        },
+        "duration_target_ms": 45011,
+        "goal": "45s vertical product reel",
+        "must_avoid": [
+          "person:ceo"
+        ],
+        "must_keep": [
+          "product close-up"
+        ],
+        "pacing": {
+          "on_beat": false,
+          "tolerance_ms": 120
+        },
+        "structure": [
+          {
+            "asset": "ast_a91",
+            "beat": "hook",
+            "record": [
+              0,
+              674
+            ],
+            "source": [
+              1440,
+              1751
+            ]
+          },
+          {
+            "asset": "ast_c13",
+            "beat": "payoff",
+            "record": [
+              674,
+              1309
+            ],
+            "source": [
+              60,
+              254
+            ]
+          }
+        ]
+      },
+      "request_name": "three_shot_reel_short"
+    },
+    {
+      "attempt": 2,
+      "id": "p05",
+      "outcome": "rejected",
+      "plan": {
+        "aspect": "9:16",
+        "duration_ladder": {
+          "fallback": "extend_payoff",
+          "fallback_above_ms": 500,
+          "repair_above_ms": 200
+        },
+        "duration_target_ms": 10010,
+        "goal": "10s teaser",
+        "must_avoid": [],
+        "must_keep": [],
+        "pacing": {
+          "on_beat": false,
+          "tolerance_ms": 120
+        },
+        "structure": [
+          {
+            "asset": "ast_a91",
+            "beat": "hook",
+            "record": [
+              10,
+              150
+            ],
+            "source": [
+              0,
+              240
+            ]
+          },
+          {
+            "asset": "ast_c13",
+            "beat": "payoff",
+            "record": [
+              150,
+              300
+            ],
+            "source": [
+              0,
+              240
+            ]
+          }
+        ]
+      },
+      "request_name": "short_hook_gap"
+    }
+  ],
+  "source": "template planner (not a language model)"
+}

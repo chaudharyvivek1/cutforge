@@ -1,0 +1,36 @@
+name: benchmark
+
+# §12.9's matrix, measured. Weekly and on demand, never on a pull request:
+# GPU minutes cost money and throughput regression is not a correctness failure.
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    runs-on: [self-hosted, gpu]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the tooling
+        run: pip install --quiet python-docx pymupdf imageio-ffmpeg
+      - name: Confirm the encoder is the one §12.3 models
+        run: |
+          python - <<'PY'
+          import imageio_ffmpeg, subprocess
+          exe = imageio_ffmpeg.get_ffmpeg_exe()
+          out = subprocess.run([exe, "-hide_banner", "-encoders"], capture_output=True, text=True).stdout
+          if "h264_nvenc" not in out:
+              raise SystemExit("::error::no h264_nvenc on this runner — §12.3 models NVENC")
+          print("h264_nvenc present")
+          PY
+      - name: Render the matrix
+        run: python build/benchmark.py docs/benchmarks
+      - name: Keep the numbers
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: docs/benchmarks/*.json

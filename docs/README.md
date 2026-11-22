@@ -39,6 +39,7 @@ Open findings are deliberately kept **out** of the specification. A spec that li
 | Script | Does | Run when |
 |---|---|---|
 | `build/check_figures.py` | Recomputes 48 of the spec's figures from first principles and fails on any drift | Before every commit that touches a number |
+| `build/check_consistency.py` | Version strings, enum drift, count agreement, requirement IDs, table/listing/figure numbering, dead references | Before every commit |
 | `build/build_docx.py` | Builds the `.docx` from `spec/v1.4.md` in the house style | After any markdown change |
 | `build/extract_spec.py` | Recovers markdown from a `.docx`, for round-trip verification and for the archived versions | After a build, to prove the document matches its source |
 

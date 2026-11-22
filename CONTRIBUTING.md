@@ -7,10 +7,11 @@ The specification is the product. Everything here exists to keep it correct, rev
 **A number in the document is either computed or labelled an assumption.** No figure is typed twice. If you change a number, change `build/check_figures.py` in the same commit, or the check will fail — which is the point.
 
 ```bash
-python build/check_figures.py docs/spec/v1.3.md
+python build/check_figures.py docs/spec/v1.4.md       # the arithmetic
+python build/check_consistency.py docs/spec/v1.4.md  # everything that is not arithmetic
 ```
 
-Run it before every commit that touches a figure. It takes under a second and it has already caught two real defects: a rounding rule that disagreed with Python's `round()`, and a fleet-size calculation that used truncated stream counts.
+Run both before every commit. Together they take under a second, and between them they have caught six real defects: a rounding rule that disagreed with Python's `round()`, a fleet-size calculation that used truncated stream counts, a speed schema that contradicted the wire format, three overlapping determinism rows, a finding count that disagreed with its own table, and a requirement table with two FR-15 rows.
 
 ## How a version is cut
 

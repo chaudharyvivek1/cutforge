@@ -51,7 +51,7 @@ Commits, in order:
 
 | # | Commit | What it did |
 |---|---|---|
-| 16 | `docs(spec): add v1.4 source` | The markdown, edited from v1.3 with 34 anchored replacements and three new sections |
+| 16 | `docs(spec): add v1.4 source` | The markdown, edited from v1.3 with 35 anchored replacements and four new sections |
 | 17 | `build: add the docx builder` | `build/build_docx.py` — house style reproduced: A4, Calibri, navy captions, tinted table headers, code on a pale slab |
 | 18 | `build: extend the figure checker to 48 assertions` | Appendix A's five clips through the conform map, and the third cost operating point |
 | 19 | `docs(spec): build v1.4 and archive v1.3` | The `.docx`, and the superseded version moved to `archive/` |
@@ -60,6 +60,21 @@ Commits, in order:
 | 22 | `docs: update README, index and worklog` | The version table, the reading order and this section |
 
 What the figure checker proved, beyond the arithmetic: extracting the built `.docx` back to markdown and re-running all 48 checks passes, which is the round-trip test that the document contains what its source says.
+
+## 2b. The review pass over v1.4 itself
+
+Every version gets reviewed; v1.4 got a second look before it was announced, on the principle that a document whose §0 accuses three previous versions of count drift should survive the same test. Six defects were found in my own work, which is roughly the rate the taxonomy predicts.
+
+| Defect | How it survived the build | Fix |
+|---|---|---|
+| `speed.num` and `speed.den` were integers | The schema validated; only §5.1's wire format said rates are decimal strings. Two sections, one contract, no cross-check. | Both are `$ref rateString`, and the 16× bound moved to the validator, where §5.11 already enforced it |
+| Three overlapping determinism rows in §2.2 | The new rows were appended without reading the rows already there | Collapsed to two: compiler determinism on raw frames, delivered-byte reproducibility on the pinned path |
+| Front matter claimed 10 findings, the table had 12 | Two candidate findings split into an arithmetic error and the invariant that hid it, and only the table was updated | Count corrected to 12, with the split explained in the §0 lead |
+| The requirement table had two FR-15 rows | The new rows were anchored to FR-14 and inserted before the existing FR-15 | Renumbered to FR-16 and FR-17, placed after it, and the two references updated |
+| `check_figures.py` defaulted to a deleted file | The default path was never exercised because every call passed an argument | Default corrected, and the consistency check now tests that no script points at a missing document |
+| The running header hardcoded v1.4 | The builder was written for one version | Derived from the eyebrow line, so a v1.5 build cannot lie about itself |
+
+Five of the six were found by rendering the document and reading it, not by the checks — which is the argument for `build/check_consistency.py`, added afterwards so the sixth and its siblings fail the build next time.
 
 ## 3. What the verification actually checks
 

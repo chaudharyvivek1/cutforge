@@ -13,5 +13,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v1.6.docx` | v1.6 | Sixth technical review — a conformance suite, audio handles to the sample, the VFR map under speed |
 | `AI_Video_Editor_Architecture_v1.7.docx` | v1.7 | Seventh technical review — a reference compiler under golden files, the erasure schema, a static migration check |
 | `AI_Video_Editor_Architecture_v1.8.docx` | v1.8 | Eighth technical review — five golden graphs, a byte-reproducible build, a round-trip and a rendered-page check |
+| `AI_Video_Editor_Architecture_v1.9.docx` | v1.9 | Ninth technical review — LUTs, colour in both directions, a mixed audio bus, golden provenance |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

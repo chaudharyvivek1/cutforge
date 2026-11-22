@@ -18,8 +18,10 @@ class TestCalibration(unittest.TestCase):
     def setUpClass(cls):
         cls.result = Cal.separation()
 
-    def test_every_pair_is_ordered_correctly(self):
-        self.assertEqual(self.result["separation"], 1.0,
+    def test_almost_every_pair_is_ordered_correctly(self):
+        # v2.17 added a plan the threshold judge accepts and a viewer would not,
+        # so the rubric alone can no longer be perfect on this set
+        self.assertGreaterEqual(self.result["separation"], 0.93,
                          [r["why"] for r in self.result["scored"]
                           if r["label"] == "good" and r["verdict"] != "acceptable"])
 
@@ -28,12 +30,13 @@ class TestCalibration(unittest.TestCase):
             if row["label"] == "good":
                 self.assertEqual(row["verdict"], "acceptable", row["why"])
 
-    def test_every_rejected_plan_is_not_acceptable(self):
-        # "no structure" is its own verdict and a more useful one than
-        # "below bar": an empty plan has nothing to score, not a low score.
-        for row in self.result["scored"]:
-            if row["label"] == "bad":
-                self.assertNotEqual(row["verdict"], "acceptable", row["why"])
+    def test_almost_every_rejected_plan_is_not_acceptable(self):
+        # one rejected plan is acceptable to the threshold judge alone — the
+        # slideshow — and the gate requires both judges because of it
+        accepted = [r["why"] for r in self.result["scored"]
+                    if r["label"] == "bad" and r["verdict"] == "acceptable"]
+        self.assertEqual(len(accepted), 1, accepted)
+        self.assertIn("evenly divided", accepted[0])
 
     def test_an_empty_plan_says_why_rather_than_scoring_zero(self):
         verdicts = {r["why"]: r["verdict"] for r in self.result["scored"]}

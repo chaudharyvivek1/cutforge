@@ -50,11 +50,11 @@ class TestCoverage(unittest.TestCase):
     def test_the_shape_judge_raises_no_false_alarms(self):
         self.assertEqual(self.result["shape_false_alarms"], 0)
 
-    def test_the_shape_judge_adds_no_unique_catch_on_this_set(self):
-        # measured, not hoped for: a bounded hook makes an evenly divided plan
-        # detectable by thresholds too, so the two judges are correlated by the
-        # product's own rules rather than by shared constants
-        self.assertEqual(self.result["caught_by_shape_only"], 0)
+    def test_the_shape_judge_has_exactly_one_unique_catch(self):
+        # v2.16 measured zero and said the judge added nothing. v2.17 added the
+        # plan that proves otherwise: fifteen identical three-second shots pass
+        # every threshold and are a slideshow.
+        self.assertEqual(self.result["caught_by_shape_only"], 1)
 
     def test_the_threshold_judge_catches_what_shape_cannot(self):
         self.assertGreaterEqual(self.result["caught_by_threshold_only"], 1)
@@ -102,3 +102,44 @@ class TestJudgesStillAgreeWhereItMatters(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestSlideshowRefused(unittest.TestCase):
+    """v2.17 — the plan only the shape judge catches is refused by the gate."""
+
+    def test_the_threshold_judge_accepts_it(self):
+        slideshow = {"structure": Cal.sequential([90] * 15)}
+        self.assertEqual(RB.score(slideshow, REEL)["verdict"], "acceptable")
+
+    def test_the_shape_judge_rejects_it(self):
+        slideshow = {"structure": Cal.sequential([90] * 15)}
+        self.assertEqual(Dist.judge(slideshow)["label"], "bad")
+
+    def test_the_gate_requires_both(self):
+        import json
+        import urllib.error
+        import urllib.request
+        import auth as A
+        import service as S
+        import store as St
+
+        store = St.Store(":memory:")
+        tokens = A.Tokens()
+        tokens.issue("tok_a", "tnt_test")
+        server = S.Server(store, tokens).__enter__()
+        try:
+            body = json.dumps({"kind": "plan", "payload": {
+                "plan": {"structure": Cal.sequential([90] * 15)},
+                "request": REEL}}).encode()
+            request = urllib.request.Request(
+                f"{server.url}/v1/jobs", data=body, method="POST",
+                headers={"Authorization": "Bearer tok_a",
+                         "Content-Type": "application/json"})
+            try:
+                urllib.request.urlopen(request)
+                code = 202
+            except urllib.error.HTTPError as error:
+                code = error.code
+        finally:
+            server.__exit__(None, None, None)
+        self.assertEqual(code, 422)

@@ -93,11 +93,23 @@ def make_handler(store, tokens=None):
             plan = payload.get("plan")
             if not plan:
                 return payload, None
+            import distribution as Ds
             import repair as Rp
             import rubric as Rb
-            before = Rb.score(plan, payload.get("request") or {})
-            repaired = Rp.apply_quality_repair(plan, payload.get("request") or {})
-            after = Rb.score(repaired, payload.get("request") or {})
+            request = payload.get("request") or {}
+
+            def verdict(candidate):
+                # Both judges must accept. v2.17's labelled set contains a plan
+                # that passes every threshold and is fifteen identical shots —
+                # the threshold judge cannot see it and the shape judge can.
+                return ("acceptable" if Rb.score(candidate, request)["verdict"] == "acceptable"
+                        and Ds.judge(candidate, request)["label"] == "good"
+                        else "below bar")
+
+            before = {"verdict": verdict(plan), "total": Rb.score(plan, request)["total"]}
+            repaired = Rp.apply_quality_repair(plan, request)
+            after = {"verdict": verdict(repaired),
+                     "total": Rb.score(repaired, request)["total"]}
             gate = {"before": before["verdict"], "after": after["verdict"],
                     "total": after["total"],
                     "repairs": Rp.quality_diff(plan, payload.get("request") or {})["repairs"]}

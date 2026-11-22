@@ -56,4 +56,9 @@ jobs:
           sudo apt-get install -y -qq libreoffice-writer
           pip install --quiet python-docx pymupdf
       - name: The document, rendered and read
-        run: python -m unittest discover -s tests -t tests -k TestLayout -v
+        run: |
+          python -m unittest discover -s tests -t tests -k TestLayout -v 2>&1 | tee /tmp/layout.txt
+          if grep -qi "skipped" /tmp/layout.txt; then
+            echo "::error::the layout checks skipped — they are the point of this job"
+            exit 1
+          fi

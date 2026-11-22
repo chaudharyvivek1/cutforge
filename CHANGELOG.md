@@ -6,6 +6,26 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.10 — 22 November 2026
+
+**Basis:** twentieth technical review.
+**Theme:** the file survives the join. Segments encode with closed GOPs, concatenate without losing a frame, and expire when they are no longer a cache.
+
+| Finding | Resolved by |
+|---|---|
+| No NVENC, no measured capacity | Unchanged and stated — procurement, not code |
+| Chunked render proved on raw frames, not a file | `encode_segment()` + `concat_encoded()`; the join keeps every frame and a segment encodes identically twice |
+| Nothing produced a transcript | `ProviderJSON` — seconds to source frames, provider-shaped responses |
+| Three GPU signals | Unchanged and stated |
+| Segments had no eviction | `expire_segments()` removes segments and nothing else |
+| Identity corpus | Procurement |
+
+Also: the `long-project-workflow` skill, which captures the loop this repository has been run with — verify before changing, explicit-path commits that fail loudly, the seven documents a long project needs — with `references/commit-discipline.md` recording the four failures that produced the rules.
+
+**Still open after v2.10:** six findings, in `docs/reviews/v2.11-candidates.md`. Three are gated outside the repository.
+
+---
+
 ## v2.9 — 22 November 2026
 
 **Basis:** nineteenth technical review.

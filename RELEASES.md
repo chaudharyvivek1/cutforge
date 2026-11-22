@@ -8,7 +8,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 
 | Version | Date | Document | Tests | Figures |
 |---|---|---|---|---|
-| **v2.9** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.9.docx`](docs/spec/AI_Video_Editor_Architecture_v2.9.docx) | 265 | 91 |
+| **v2.10** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.10.docx`](docs/spec/AI_Video_Editor_Architecture_v2.10.docx) | 277 | 91 |
 
 ## The line
 
@@ -34,6 +34,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 | v2.7 | 22 Nov 2026 | Seventeenth review | State is shared: the dispatcher posts, revocation and buckets live in the store |
 | v2.8 | 22 Nov 2026 | Eighteenth review | Assets exist: probe, deduplicate, proxy, conform with its map; shots detected |
 | v2.9 | 22 Nov 2026 | Nineteenth review | The render resumes: chunked equals single-pass, segments published, VFR refused |
+| v2.10 | 22 Nov 2026 | Twentieth review | The file survives the join: closed-GOP segments, a provider adapter, segment expiry |
 
 ## What "release" means here
 

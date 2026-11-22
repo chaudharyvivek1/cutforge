@@ -30,7 +30,8 @@ Each version is a full standalone specification answering one external technical
 | v2.7 | Seventeenth technical review | "State must be shared" | The dispatcher posts (§15.3), tokens and revocations in the store (§16), shared buckets, render-minute quotas (§16.1), and `ROADMAP.md` |
 | v2.8 | Eighteenth technical review | "The engine needs assets" | Asset tables and ingest (§10.1, §5.9), storage quota (§16.1), shot detection and transcript remap (§10.1, §5.10), the webhook ordering rule (§15.3) |
 | v2.9 | Nineteenth technical review | "The render must resume" | Chunked render proved byte-identical (§11.5), table-set drift checked (§13.3), the transcriber contract (§10.4), VFR refused rather than mapped (§5.9.4) |
-| v2.10 | *Not started* | — | The six open findings in `docs/reviews/v2.10-candidates.md` — two blocked on hardware |
+| v2.10 | Twentieth technical review | "The file must survive the join" | Closed-GOP segments and a container join (§11.5), a provider adapter (§10.4), segment expiry (§11.5) |
+| v2.11 | *Not started* | — | The six open findings in `docs/reviews/v2.11-candidates.md` — three gated outside the repository |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -397,6 +398,23 @@ v2.9 proved the claim the whole capacity model rests on, and closed the schema-d
 
 **The checker caught an instance twice.** `check_sql.py` was taught in v2.4 to compare *states* between code and schema. It never compared *tables*, so six reference tables were added over three versions and never reached the migration. A checker written against one instance of a pattern will always miss the next instance, which is why the fix is now a set difference in both directions rather than a list of states.
 
+## 2r. The v2.10 round
+
+v2.10 closed the distance between a graph that renders and a file a customer receives, and named the two findings that only hardware can close.
+
+| # | Commit | What it did |
+|---|---|---|
+| 129 | `skill: long-project-workflow, and commit discipline` | The loop this repository is run with, and the four commit failures that produced its rules |
+| 130 | `feat: encoded segments, a provider adapter, segment expiry` | Closed-GOP encode, container join, `ProviderJSON`, `expire_segments()` |
+| 131 | `docs(spec): add the v2.10 source` | 12 anchored edits |
+| 132 | `docs: release notes for v2.10` | Changelog, version line, this section |
+
+**Raw frames are not a file.** v2.9's chunk test proved the graph; §11.5's promise is about what a customer receives, and two encodes of identical frames differ at the GOP boundary. Segments now encode with closed GOPs, join at the container level, and the test asserts the join keeps every frame — 48 for two 24-frame chunks — and that a segment encodes identically twice. Byte equality across two *different* encodes is explicitly not claimed, because it is not true: §11.8 makes exactly that distinction for whole renders and a chunk is no different.
+
+**A cache that never expires is a cost bug.** v2.9 published segments as derivatives counted against the storage quota and removed nothing, so a tenant's storage grew with every render attempt. One sweep, one rule, and a test that it removes segments and nothing else.
+
+**And the skills caught up with the project.** `long-project-workflow` records the loop this repository has been run with — verify before changing, one complete unit per session, explicit-path commits that fail loudly, the seven documents a long project needs — and `references/commit-discipline.md` records the four failures that produced the rules, including the directory-wide `git add` that silently swallowed five commits here.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -417,14 +435,14 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| No NVENC path and no measured capacity | `reviews/v2.10-candidates.md` §1 | Every number in §12 |
-| The chunked render is proved on raw frames, not a file | §2 | Encoded output and GOP seams |
-| Nothing produces a transcript | §3 | §10.4's word-level timings from audio |
-| Three GPU signals remain unemitted | §4 | GPU memory, encoder utilisation, success rate |
-| Segment publishing has no eviction | §5 | Storage growth with every render attempt |
-| The identity corpus has no real data | §6 | Any accuracy claim |
+| No NVENC path and no measured capacity | `reviews/v2.11-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
+| Three GPU signals remain unemitted | §2 | GPU memory, encoder utilisation, success rate — **a GPU machine** |
+| The model path has no implementation | §3 | Prompt → plan; the product's whole premise — **a model budget** |
+| Identity accuracy has no corpus | §4 | Any accuracy claim — **procurement** |
+| The chunked render has never run on a real timeline | §5 | Appendix A split at its transitions |
+| Segment expiry has no policy | §6 | Retention nobody chose |
 
-Nothing in that list is architectural. Two are consequences of v2.9's own work — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
+Nothing in that list is architectural. Three are gated outside the repository — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 
 ## 5. Conventions this repository follows
 

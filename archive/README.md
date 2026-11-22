@@ -8,5 +8,6 @@ Kept for two reasons: a reader needs to see what changed and why, and a claim wi
 | `AI_Video_Editor_Architecture_v1.1.docx` | v1.1 | First technical review — time model, IR schema, database, tenancy |
 | `AI_Video_Editor_Architecture_v1.2.docx` | v1.2 | Second technical review — mixed-rate arithmetic, multi-track duration, 4K60 capacity |
 | `AI_Video_Editor_Architecture_v1.3.docx` | v1.3 | Third technical review — BigInt wire format, complete migration, P010 figures, RLS threat model |
+| `AI_Video_Editor_Architecture_v1.4.docx` | v1.4 | Fourth technical review — the conform map, speed that carries its audio, reconciled unit economics |
 
 The current version lives in `docs/spec/`. Do not edit anything here.

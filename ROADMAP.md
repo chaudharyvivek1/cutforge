@@ -61,7 +61,8 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 | **v2.15** | Expectations first | Blind labelling, one shared rule, a gate that refuses | **Done** | — |
 | **v2.16** | What a second opinion adds | A shape judge, a coverage measurement, expectation-list comparison | **Done** | — |
 | **v2.17** | What a second opinion buys | The slideshow only shape sees, both judges in the gate, a padding audit | **Done** | — |
-| — | It renders at 4K | The §12.9 matrix measured, benchmarks filled. The code path exists and refuses without a device | 1–2 sessions | **A GPU machine** |
+| **v2.18** | Automate the ritual | `cut_version.py`, the audit's correction, the completion plan | **Done** | — |
+| v2.19 | It renders at 4K | The §12.9 matrix measured, benchmarks filled. The code path exists and refuses without a device | 1 session | **One rented GPU hour** |
 | v3.0 | P0 complete | A provider adapter behind the seam, the prompt→file path end to end, evaluation corpus, the 80% target measured | 5–8 sessions | **Model budget** — the plumbing and the scoring are done |
 | v3.1 | Faces | Labelled corpus, accuracy measured, the feature enabled behind a flag | 2–3 sessions | **Procurement**, legal review |
 | v3.2 | Designed titles | Remotion to an alpha intermediate, composited at record frames, golden hash | 3–4 sessions | A decision to fund it |
@@ -72,7 +73,7 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 
 **Twenty-seven versions in, the honest statement is that the specification has outrun what this environment can prove.** v2.11 showed the remaining engineering is small; v2.13 and v2.14 showed the remaining checking is small. What is missing is a GPU, a model budget and a corpus, and five consecutive versions have now ended with that same sentence.
 
-**No finding remains that a session in this repository can close.** See `PADDING-AUDIT.md` for the measurement. **The next session should not be a version.** A GPU quote, a model budget and a corpus contract are each worth more than another review cycle, and the repository is at the useful end of what a specification can do alone.
+**No finding remains that a session in this repository can close.** See `PADDING-AUDIT.md` for the measurement and `COMPLETION-PLAN.md` for the sequence. **The next session should not be a version.** A GPU quote, a model budget and a corpus contract are each worth more than another review cycle, and the repository is at the useful end of what a specification can do alone.
 
 **To the full specification as written:** add v3.1, v3.2, v3.3 ≈ **24–36 sessions**, plus procurement and hardware.
 

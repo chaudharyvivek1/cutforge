@@ -6,6 +6,24 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.18 — 22 November 2026
+
+**Basis:** twenty-eighth technical review.
+**Theme:** the ceremony is automated. Cutting a version is one command, and the audit that measured the padding is the reason.
+
+| Finding | Resolved by |
+|---|---|
+| Cutting a version cost twelve manual steps | `build/cut_version.py` — copy, renumber, three checkers, build, extract, three checkers again, in one command. It refuses to cut a document that fails a checker, on the source and on the artefact. |
+| Capacity, GPU signals, model, corpus, second author | Blocked and stated |
+
+The audit's finding was that the padding was not the documents — they are why the project can be audited at all — but the twelve manual steps producing them. **Ritual is padding; record is not.**
+
+Also added: `COMPLETION-PLAN.md`, which turns the remaining work into seven steps with ranges: **10–15 sessions to a usable product**, 18–26 to the full specification, and the calendar set by step 1 — one rented GPU hour.
+
+**Still open after v2.18:** five findings, all purchases or a person. There is nothing left that a session in this repository can close.
+
+---
+
 ## v2.17 — 22 November 2026
 
 **Basis:** twenty-seventh technical review.

@@ -38,7 +38,8 @@ Each version is a full standalone specification answering one external technical
 | v2.15 | Twenty-fifth technical review | "Write the expectations first" | Blind labelling (§19.2), one shared rule for hook and cuts, a gate that refuses (§7.5) |
 | v2.16 | Twenty-sixth technical review | "Measure what the second opinion adds" | A shape judge (§19.2), a coverage measurement, expectation-list comparison |
 | v2.17 | Twenty-seventh technical review | "What does a second opinion buy?" | The slideshow (§19.2), both judges in the gate, `PADDING-AUDIT.md` |
-| v2.18 | *Not started* | — | The five open findings in `docs/reviews/v2.18-candidates.md` — four are purchases, and a version would close nothing |
+| v2.18 | Twenty-eighth technical review | "Automate the ritual, keep the record" | `build/cut_version.py`, the audit's own correction, `COMPLETION-PLAN.md` |
+| v2.19 | *Not started* | — | `COMPLETION-PLAN.md` step 1 — one rented GPU hour, not a review cycle |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -537,6 +538,23 @@ v2.17 answered the question the previous version had left open, and then audited
 
 **And the audit is the more useful artefact.** Measured from git rather than remembered: the last seven versions each added four to eleven net lines to a 2,770-line specification, and four of them — v2.13 to v2.16 — were one activity in four instalments. The repository now says that in its own voice, next to the review list that has named the same four purchases for eight versions.
 
+## 2z. The v2.18 round
+
+v2.18 acted on the padding audit, and the action was not the one the audit suggested.
+
+| # | Commit | What it did |
+|---|---|---|
+| 157 | `build: cut a version in one command` | `build/cut_version.py` — the mechanical half of a version |
+| 158 | `docs: the audit's own correction` | The padding was the ceremony, not the record |
+| 159 | `docs: the completion plan` | Seven steps, ranges, and what each is gated on |
+| 160 | `docs(spec): build v2.18` | Cut by the tool, then the prose by hand |
+
+**The audit said the documents were the overhead. They are not.** The changelog, the worklog and the review lists are the only reason the padding table could be computed instead of remembered. What cost twelve steps per version was renumbering, three checkers, a build, a round trip and five hand-staged commits — all mechanical, all done by hand, and the direct cause of a commit that silently failed five times.
+
+**The tool's first version failed its own check.** It copied the source and left the front-matter row saying v2.17; `check_consistency.py` refused the document. The fix was to let the tool own that substitution — which means the stale-row defect cannot ship again.
+
+**And the plan replaces the treadmill.** `COMPLETION-PLAN.md` has seven steps: one GPU hour, a model adapter, a corpus, an end-to-end path, faces, titles, platform integration. **10–15 sessions to a usable product**, 18–26 to the full specification, and the calendar set by the first step because everything else waits on it.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -557,9 +575,9 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The capacity model is unmeasured | `reviews/v2.18-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
-| Three GPU signals remain unemitted | §2 | GPU memory, encoder utilisation, success rate — **a GPU machine** |
-| No model has produced a plan | §3 | The product's premise — **a model budget** |
+| The capacity model is unmeasured | `reviews/v2.19-candidates.md` §1 | Every figure in §12 — **one rented GPU hour** |
+| Three GPU signals remain unemitted | §2 | GPU memory, encoder utilisation, success rate — **the same hour** |
+| No model has produced a plan | §3 | The product's premise — **model budget** |
 | The identity corpus has no data | §4 | Any accuracy claim — **procurement** |
 | The blind judge still has one author | §5 | Whether the rubric's blind spots survive a second person |
 

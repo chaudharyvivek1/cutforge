@@ -8,7 +8,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 
 | Version | Date | Document | Tests | Figures |
 |---|---|---|---|---|
-| **v2.17** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.17.docx`](docs/spec/AI_Video_Editor_Architecture_v2.17.docx) | 365 | 91 |
+| **v2.18** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.18.docx`](docs/spec/AI_Video_Editor_Architecture_v2.18.docx) | 365 | 91 |
 
 ## The line
 
@@ -42,6 +42,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 | v2.15 | 22 Nov 2026 | Twenty-fifth review | A blind judge, one shared rule, and a gate that can refuse |
 | v2.16 | 22 Nov 2026 | Twenty-sixth review | A second judge of a different shape, and a coverage measurement |
 | v2.17 | 22 Nov 2026 | Twenty-seventh review | The slideshow only the shape judge sees; a padding audit |
+| v2.18 | 22 Nov 2026 | Twenty-eighth review | The ceremony automated; a completion plan |
 
 ## What "release" means here
 

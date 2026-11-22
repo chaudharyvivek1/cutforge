@@ -6,6 +6,25 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.13 — 22 November 2026
+
+**Basis:** twenty-third technical review.
+**Theme:** the rubric is calibrated against labels it was not tuned on, and the repair loop consults quality rather than only schema validity.
+
+| Finding | Resolved by |
+|---|---|
+| The rubric's thresholds were asserted, not calibrated | `calibration.separation()` — ten plans labelled by rule, no label mentioning a number; 21 of 21 pairs ordered correctly |
+| The rubric was not wired into repair | `quality_diff()` names a criterion; `apply_quality_repair()` converges in three passes and cannot change the total |
+| Capacity, GPU signals, model, corpus | Blocked and stated |
+
+Getting to perfect separation required correcting two labels that contradicted §7.2 and two criteria that were unsatisfiable by construction — a payoff required to exceed the median fails half of all plans on its own definition, and capping a shot at a third of the film cannot be met by a two-shot reel.
+
+Also fixed: the first repair implementation shifted every later shot when capping the hook, which shortened the film by 584 frames — a repair that fixes the score by losing footage. It now moves boundaries only.
+
+**Still open after v2.13:** six findings, in `docs/reviews/v2.14-candidates.md`. Four are purchases, and the list now argues for stopping.
+
+---
+
 ## v2.12 — 22 November 2026
 
 **Basis:** twenty-second technical review.

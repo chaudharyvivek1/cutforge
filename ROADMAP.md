@@ -56,6 +56,7 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 | **v2.10** | The file survives the join | Closed-GOP segments, container join, provider adapter, segment expiry | **Done** | — |
 | **v2.11** | The model has a seam | Two passes behind one interface, usable-encoder probe, retention policy | **Done** | — |
 | **v2.12** | Quality is a number | A rubric with four computable criteria, a bounded hook, a worker loop, a split suite | **Done** | — |
+| **v2.13** | The rubric is checked | Calibration against labels it was not tuned on, quality repair, boundary arithmetic | **Done** | — |
 | — | It renders at 4K | The §12.9 matrix measured, benchmarks filled. The code path exists and refuses without a device | 1–2 sessions | **A GPU machine** |
 | v3.0 | P0 complete | A provider adapter behind the seam, the prompt→file path end to end, evaluation corpus, the 80% target measured | 5–8 sessions | **Model budget** — the plumbing and the scoring are done |
 | v3.1 | Faces | Labelled corpus, accuracy measured, the feature enabled behind a flag | 2–3 sessions | **Procurement**, legal review |
@@ -63,7 +64,9 @@ Each version is one review cycle and one coherent piece of work. The estimate is
 | v3.3 | The platform | `origin`/`params_hash` contract exercised against the 3D and dubbing engines | 2–3 sessions | Those engines' owners |
 | v4.0 | Product surface | Whatever the platform needs — accounts, billing, UI | Not estimated here | Platform decisions |
 
-**Rough total to a system that turns a prompt into a rendered file at 1080p:** ≈ **7–12 sessions**, and every one of them is gated on a purchase rather than on work. v2.11 proved that the remaining engineering is small; what is missing is a GPU, a model budget and a corpus.
+**Rough total to a system that turns a prompt into a rendered file at 1080p:** ≈ **5–9 sessions**, and every one of them is gated on a purchase rather than on work.
+
+**Twenty-three versions in, the honest statement is that the specification has outrun what this environment can prove.** v2.11 showed the remaining engineering is small; v2.13 showed the remaining checking is small. What is missing is a GPU, a model budget and a corpus, and no further version moves any of the three.
 
 **To the full specification as written:** add v3.1, v3.2, v3.3 ≈ **24–36 sessions**, plus procurement and hardware.
 

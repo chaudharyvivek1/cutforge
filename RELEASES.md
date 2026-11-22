@@ -8,7 +8,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 
 | Version | Date | Document | Tests | Figures |
 |---|---|---|---|---|
-| **v2.12** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.12.docx`](docs/spec/AI_Video_Editor_Architecture_v2.12.docx) | 306 | 91 |
+| **v2.13** | 22 Nov 2026 | [`AI_Video_Editor_Architecture_v2.13.docx`](docs/spec/AI_Video_Editor_Architecture_v2.13.docx) | 322 | 91 |
 
 ## The line
 
@@ -37,6 +37,7 @@ Artefacts for the current version live in [`docs/spec/`](docs/spec/). Everything
 | v2.10 | 22 Nov 2026 | Twentieth review | The file survives the join: closed-GOP segments, a provider adapter, segment expiry |
 | v2.11 | 22 Nov 2026 | Twenty-first review | The model has a seam: two passes behind one interface, an absent GPU refused, retention policy |
 | v2.12 | 22 Nov 2026 | Twenty-second review | Quality is a number: a rubric, a bounded hook, a worker loop, a split suite |
+| v2.13 | 22 Nov 2026 | Twenty-third review | The rubric is calibrated, and repair consults quality |
 
 ## What "release" means here
 

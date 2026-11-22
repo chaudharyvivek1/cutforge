@@ -148,6 +148,27 @@ def main():
     check("120 ms at 29.97", round_half_away(120 * FPS_2997 / 1000), 4)
     check("120 ms at 59.94", round_half_away(120 * FPS_5994 / 1000), 7)
 
+    # --------------------------- Appendix A  the conform map on real figures
+    # Every conformed span must equal its record duration, and the column
+    # "if native were decoded" must be the difference between them.
+    clips = [
+        ("c1", F(24000, 1001), 1440, 1689, 311, +62),
+        ("c2", F(25),             96,  317, 265, +44),
+        ("c3", F(30000, 1001),    60,  254, 194,   0),
+        ("c4", F(60000, 1001),   900, 1562, 331, -331),
+        ("c5", F(24000, 1001),  2160, 2397, 296, +59),
+    ]
+    for name, fps_src, a, b, record, drift in clips:
+        c_in = round_half_away(a * FPS_2997 / fps_src)
+        c_out = round_half_away(b * FPS_2997 / fps_src)
+        span = c_out - c_in
+        check(f"{name} conformed span = record", span, record)
+        check(f"{name} conform delta", span - record, 0)
+        check(f"{name} drift if native were decoded", record - (b - a), drift)
+
+    # ------------------------------- 12.11  the third operating point
+    check("1080p30 at the headroom point", round(float(headroom) / 8, 5), 0.00052, 1e-5)
+
     # ------------------------------------------------ report
     print(f"{CHECKS} figures checked against first principles.")
     if FAILURES:

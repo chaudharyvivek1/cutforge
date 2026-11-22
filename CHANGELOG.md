@@ -6,6 +6,23 @@ The change basis is always an external technical review. Every version carries a
 
 ---
 
+## v2.14 — 22 November 2026
+
+**Basis:** twenty-fourth technical review.
+**Theme:** the calibration set is big enough to disagree, and the disagreement found a criterion missing since the rubric was written.
+
+| Finding | Resolved by |
+|---|---|
+| Ten plans was a small calibration set | Twenty plans and a disagreement report — which found two: a missing maximum cut rate, and one label of mine that was wrong |
+| The repair loop was not wired into the service | The service runs it on submission and returns the before/after verdict with the repairs |
+| Capacity, GPU signals, model, corpus | Blocked and stated |
+
+Forty cuts in forty-five seconds had scored a perfect 1.0 because pacing asked only whether there were *enough* cuts. A plan 3.7 per cent short of its target was labelled a rejection when that is inside delivery tolerance. One disagreement fixed the rubric, one fixed the label.
+
+**Still open after v2.14:** six findings, in `docs/reviews/v2.15-candidates.md`, and the list now says plainly: stop cutting versions, buy the three things.
+
+---
+
 ## v2.13 — 22 November 2026
 
 **Basis:** twenty-third technical review.

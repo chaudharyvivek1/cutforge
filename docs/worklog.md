@@ -34,7 +34,8 @@ Each version is a full standalone specification answering one external technical
 | v2.11 | Twenty-first technical review | "The model must have a seam" | The two-pass model path behind one interface (§7.1), a usable-encoder probe (§12.3), retention policy (§11.5), Appendix A as the split fixture |
 | v2.12 | Twenty-second technical review | "Quality must be a number" | The rubric (§19.2), a bounded hook (§7.2), the worker loop (§18), a split suite |
 | v2.13 | Twenty-third technical review | "The rubric must be checked too" | Calibration against labels (§19.2), quality repair (§7.5), boundary arithmetic |
-| v2.14 | *Not started* | — | The six open findings in `docs/reviews/v2.14-candidates.md` — four are purchases, and the list argues for stopping |
+| v2.14 | Twenty-fourth technical review | "The set must disagree" | Twenty labelled plans (§19.2), the quality gate in the service (§7.5), a maximum cut rate |
+| v2.15 | *Not started* | — | The six open findings in `docs/reviews/v2.15-candidates.md` — the list recommends buying rather than building |
 
 The pattern across the four versions is worth stating, because it predicts the fifth: **each review found the previous version arithmetically correct inside its sections and inconsistent between them.** v1.1's defect was a speed formula that assumed two rates were equal; v1.2's was a duration rule that worked on one track; v1.3's was a set of figures that assumed two bytes per pixel. The class of defect does not change; the layer it hides in does.
 
@@ -470,6 +471,22 @@ v2.13 checked the checker, and the checking found four things wrong with the che
 
 **And the first repair implementation fixed the score by losing footage.** Capping the hook shifted every later shot, shortening a 45-second film to 25.6 — a repair that would have shipped a 584-frame hole and reported success. The correction moves boundaries instead, so the total cannot change, and a test asserts it.
 
+## 2v. The v2.14 round
+
+v2.14 is the first version whose headline result is a disagreement, and that is what a calibration set is for.
+
+| # | Commit | What it did |
+|---|---|---|
+| 144 | `feat: twenty labelled plans and a quality gate` | A set that disagrees; the repair runs on submission |
+| 145 | `docs(spec): add the v2.14 source` | 11 anchored edits |
+| 146 | `docs: release notes for v2.14` | Changelog, version line, this section |
+
+**Doubling the set to twenty broke the rubric twice, which is the point.** Forty cuts in forty-five seconds had scored a perfect 1.0, because pacing asked only whether there were *enough* cuts and never whether there were too many — a shot shorter than a second and a half leaves nothing to read, and the rubric had no opinion about it. The second failure was mine: a plan 3.7 per cent short of its target was labelled a rejection when that is inside delivery tolerance. One disagreement fixed the rubric and one fixed the label; a set that produces neither proves nothing.
+
+**And the repair now runs where plans actually go.** v2.13 built `apply_quality_repair` and called it from tests; the service now runs it on submission, returns the before and after verdict with the repairs that were made, and leaves a good plan untouched. A repaired plan is visible rather than silent.
+
+**Five versions, four purchases.** The v2.15 list opens with the same four items as v2.12's, which is now the most useful fact in the repository: no further version moves any of them.
+
 ## 3. What the verification actually checks
 
 `build/check_figures.py` derives each figure from first principles rather than comparing it to a stored constant, so it keeps working when the document changes. Thirty-two checks across five groups:
@@ -490,12 +507,12 @@ Writing the check found two real defects in the checking itself, both worth reco
 
 | Item | Where | Blocking what |
 |---|---|---|
-| The capacity model is unmeasured | `reviews/v2.14-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
+| The capacity model is unmeasured | `reviews/v2.15-candidates.md` §1 | Every figure in §12 — **a GPU machine** |
 | Three GPU signals remain unemitted | §2 | GPU memory, encoder utilisation, success rate — **a GPU machine** |
 | No model has produced a plan | §3 | The product's premise — **a model budget** |
 | The identity corpus has no data | §4 | Any accuracy claim — **procurement** |
-| Ten plans is a small calibration set | §5 | Whether the thresholds hold on plans the rubric has never seen |
-| The repair loop is not wired into the service | §6 | Quality repair in production |
+| The calibration set has one author | §5 | Whether the thresholds survive a second opinion |
+| The quality gate cannot refuse | §6 | A plan that cannot be repaired |
 
 Nothing in that list is architectural. Four are gated on a purchase — the renderer proves a graph rather than the compiler's graph, and the planner exists without the loop that drives it — and the largest is that nothing has ever run as a service — the compiler covers what the golden file exercises, and the migration check found the extractor bug. Roughly half of every list since v1.4 has been created by the previous fix, which remains the strongest argument in this repository for keeping the list separate from the specification.
 

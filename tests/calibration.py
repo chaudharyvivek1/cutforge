@@ -221,3 +221,24 @@ def judge(plan, request):
     return {"label": "bad" if reasons else "good",
             "why": "; ".join(reasons) or "meets the stated expectations",
             "notes": notes}
+
+
+def compare_expectation_lists(first, second):
+    """Diff two independently written expectation lists (finding 5).
+
+    v2.15's harness writes expectations before a plan exists, so a label cannot
+    be revised after a score. The remaining circularity is human: the same
+    person wrote the rubric and the expectations. This compares two lists field
+    by field so a second person's can be read against the first without either
+    being privileged.
+    """
+    fields = sorted(set(first) | set(second))
+    diffs = []
+    for field in fields:
+        a, b = first.get(field), second.get(field)
+        if isinstance(a, list) and isinstance(b, list):
+            if sorted(map(str, a)) != sorted(map(str, b)):
+                diffs.append({"field": field, "first": a, "second": b})
+        elif a != b:
+            diffs.append({"field": field, "first": a, "second": b})
+    return {"fields": len(fields), "differences": diffs}
